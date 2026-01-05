@@ -1,14 +1,14 @@
 /**
  * ==============================================================================
- * Global Configuration & Data Management
+ * 전역 설정 및 데이터 관리
  * ==============================================================================
  */
-// Google Spreadsheet configuration
+// 구글 스프레드시트 설정
 const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM';
 const SHEET_TITLE = '시트1'; 
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_TITLE}`;
 
-// Company information structure for filtering and display
+// 회사 정보 구조체 (필터링 및 표시에 사용)
 const companyInfo = {
     groups: {
         old: ["b-flat", "Anova", "Furyu"],
@@ -25,57 +25,57 @@ const companyInfo = {
     }
 };
 
-// Application state variables
-let productData = [];
-let currentTab = 'owned'; 
-let filters = { country: 'all', character: 'all', companyGroup: 'all', companySpecific: null };
+// 애플리케이션 상태 변수
+let productData = []; // 전체 상품 데이터
+let currentTab = 'owned'; // 현재 선택된 탭 (보유/위시)
+let filters = { country: 'all', character: 'all', companyGroup: 'all', companySpecific: null }; // 필터 상태
 
-// Load saved checked items from localStorage
+// 로컬 스토리지에서 저장된 체크 항목 불러오기
 let checkedItems = {
     owned: new Set(JSON.parse(localStorage.getItem('nongdam_owned') || '[]')),
     wish: new Set(JSON.parse(localStorage.getItem('nongdam_wish') || '[]'))
 };
 
-// DOM element references
+// DOM 요소 참조
 const listContainer = document.getElementById('listContainer');
 
 /**
  * ==============================================================================
- * Initialization Logic
+ * 초기화 로직
  * ==============================================================================
  */
-// Initialize application on DOMContentLoaded
+// DOMContentLoaded 시 애플리케이션 초기화
 document.addEventListener('DOMContentLoaded', async () => {
     if (listContainer) {
-        listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">Loading Data... 🐻</div>';
+        listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">데이터 불러오는 중... 🐻</div>';
     }
 
-    // Attach event listeners to tab buttons
+    // 탭 버튼 이벤트 리스너 등록
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // Fetch data and render initial view
+    // 데이터 가져오기 및 초기 화면 렌더링
     await fetchSheetData();
     renderCompanySubFilters();
     renderList();
     updateTabUI();
 });
 
-// Fetch and parse data from Google Spreadsheet CSV
+// 구글 스프레드시트 CSV 데이터 가져오기 및 파싱
 async function fetchSheetData() {
     try {
         const response = await fetch(SHEET_URL);
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) throw new Error('네트워크 응답이 올바르지 않습니다.');
         
         const data = await response.text();
         const rows = data.split(/\r?\n/);
         
-        if (rows.length < 2) throw new Error('Empty data returned from sheet');
+        if (rows.length < 2) throw new Error('시트에서 빈 데이터가 반환되었습니다.');
 
         const headers = parseCsvRow(rows[0]);
         
-        // Parse CSV rows into objects
+        // CSV 행을 객체로 파싱
         productData = rows.slice(1)
             .filter(row => row.trim() !== "")
             .map(row => {
@@ -87,21 +87,21 @@ async function fetchSheetData() {
                 return obj;
             });
 
-        console.log(`[System] Successfully loaded ${productData.length} items.`);
+        console.log(`[시스템] 총 ${productData.length}개의 아이템을 성공적으로 로드했습니다.`);
 
     } catch (err) {
-        console.error("[System] Data Fetch Error:", err);
+        console.error("[시스템] 데이터 가져오기 오류:", err);
         if (listContainer) {
             listContainer.innerHTML = `<div style="text-align:center; padding:50px; color:#ff7675;">
-                Failed to load data.<br>
-                Error: ${err.message}<br>
-                Please check the Google Sheet publishing settings.
+                데이터를 불러오지 못했습니다.<br>
+                오류: ${err.message}<br>
+                구글 시트 게시 설정을 확인해주세요.
             </div>`;
         }
     }
 }
 
-// Helper function to parse CSV row correctly handling quotes
+// CSV 행 파서 (따옴표 내부의 쉼표 처리)
 function parseCsvRow(row) {
     const result = [];
     let startValueIndex = 0;
@@ -119,10 +119,10 @@ function parseCsvRow(row) {
 
 /**
  * ==============================================================================
- * Rendering & Filtering Logic
+ * 렌더링 및 필터링 로직
  * ==============================================================================
  */
-// Switch between 'owned' and 'wish' tabs
+// '보유' 및 '위시' 탭 간 전환
 function switchTab(tab) {
     currentTab = tab;
     if (tab === 'wish') document.body.classList.add('theme-wish');
@@ -131,19 +131,19 @@ function switchTab(tab) {
     renderList();
 }
 
-// Update tab button UI states
+// 탭 버튼 UI 상태 업데이트
 function updateTabUI() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === currentTab);
     });
 }
 
-// Render the list of items based on current tab and filters
+// 현재 탭 및 필터를 기반으로 아이템 목록 렌더링
 function renderList() {
     if (!listContainer) return;
     listContainer.innerHTML = '';
     
-    // Apply filters to productData
+    // 필터 적용
     const filteredData = productData.filter(item => {
         if (filters.country !== 'all' && item.country !== filters.country) return false;
         if (filters.character !== 'all' && item.character !== filters.character) return false;
@@ -157,24 +157,24 @@ function renderList() {
         return true;
     });
 
-    // Handle no results case
+    // 결과 없음 처리
     if (filteredData.length === 0) {
-        listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">No items match your filter. 😢</div>';
+        listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">필터와 일치하는 아이템이 없습니다. 😢</div>';
         return;
     }
 
-    // Group items by character subGroup or main group
+    // 캐릭터 서브그룹 또는 메인 그룹으로 아이템 그룹화
     const grouped = {};
     filteredData.forEach(item => {
         let groupKey;
         if (filters.character === 'ngn' && item.subGroup) groupKey = item.subGroup;
-        else groupKey = item.group || "Others";
+        else groupKey = item.group || "기타";
 
         if (!grouped[groupKey]) grouped[groupKey] = [];
         grouped[groupKey].push(item);
     });
 
-    // Render groups and item cards
+    // 그룹 및 아이템 카드 렌더링
     Object.keys(grouped).forEach(groupName => {
         const title = document.createElement('h3');
         title.className = 'group-title';
@@ -205,7 +205,7 @@ function renderList() {
     });
 }
 
-// Toggle checked state of an item
+// 아이템 체크 상태 토글
 function toggleCheck(id, cardElement) {
     if (checkedItems[currentTab].has(id)) { 
         checkedItems[currentTab].delete(id); 
@@ -217,17 +217,17 @@ function toggleCheck(id, cardElement) {
     saveData();
 }
 
-// Save checked items to localStorage
+// 체크된 아이템을 로컬 스토리지에 저장
 function saveData() { 
     localStorage.setItem(`nongdam_${currentTab}`, JSON.stringify([...checkedItems[currentTab]])); 
 }
 
 /**
  * ==============================================================================
- * Filter Actions (Exposed for HTML onclick events)
+ * 필터 액션 (HTML onclick 이벤트용 전역 함수)
  * ==============================================================================
  */
-// Set main filter type and value
+// 메인 필터 타입 및 값 설정
 window.setFilter = function(type, value) {
     filters[type] = value;
     const parentWrapper = event.currentTarget.closest('.filter-item-wrapper');
@@ -238,7 +238,7 @@ window.setFilter = function(type, value) {
     renderList();
 };
 
-// Set company group filter ('old' or 'new')
+// 회사 그룹 필터 설정
 window.setCompanyFilter = function(group) {
     filters.companyGroup = group; 
     filters.companySpecific = null;
@@ -255,7 +255,7 @@ window.setCompanyFilter = function(group) {
     renderList();
 };
 
-// Set specific company filter
+// 특정 회사 필터 설정
 window.setCompanySpecific = function(companyName, btnElement) {
     if (filters.companySpecific === companyName) { 
         filters.companySpecific = null; 
@@ -268,7 +268,7 @@ window.setCompanySpecific = function(companyName, btnElement) {
     renderList();
 };
 
-// Render sub-filter buttons for companies
+// 회사 하위 필터 버튼 렌더링
 window.renderCompanySubFilters = function() {
     const oldContainer = document.getElementById('old-subs');
     if(oldContainer) {
@@ -295,7 +295,7 @@ window.renderCompanySubFilters = function() {
     }
 };
 
-// Reset all filters to default state
+// 모든 필터를 기본 상태로 초기화
 window.resetFilters = function() {
     filters = { country: 'all', character: 'all', companyGroup: 'all', companySpecific: null };
     document.querySelectorAll('.flag-btn, .char-btn, .text-btn, .sub-btn').forEach(btn => btn.classList.remove('active'));
@@ -309,23 +309,23 @@ window.resetFilters = function() {
     renderList();
 };
 
-// Reset checked records for the current tab
+// 현재 탭의 체크 기록 초기화
 window.resetRecords = function() {
-    const listName = currentTab === 'owned' ? 'Owned' : 'Wish';
-    if (confirm(`Delete all records for [${listName} List]?`)) { 
+    const listName = currentTab === 'owned' ? '보유' : '위시';
+    if (confirm(`[${listName} 리스트]의 모든 기록을 삭제하시겠습니까?`)) { 
         checkedItems[currentTab].clear(); 
         saveData(); 
         renderList(); 
-        alert(`Reset complete.`); 
+        alert(`초기화되었습니다.`); 
     }
 };
 
 /**
  * ==============================================================================
- * Image Generation Logic
+ * 이미지 생성 로직
  * ==============================================================================
  */
-// Helper: Creates a rounded rectangle path in the canvas context
+// 헬퍼: 캔버스 컨텍스트에 둥근 사각형 경로 생성
 function roundedRect(ctx, x, y, width, height, radius) {
     ctx.beginPath();
     ctx.moveTo(x + radius, y);
@@ -340,32 +340,46 @@ function roundedRect(ctx, x, y, width, height, radius) {
     ctx.closePath();
 }
 
-// Helper: Attempts to load a font with a timeout to prevent hanging
+// 헬퍼: 타임아웃을 포함한 로컬 폰트 로딩 시도
 async function loadFontWithTimeout(name, url, timeout = 3000) {
     try {
+        if (!window.FontFace) {
+            console.warn("[시스템] 이 브라우저는 FontFace API를 지원하지 않습니다. 기본 폰트를 사용합니다.");
+            return false;
+        }
+
+        // 로컬 파일 경로 사용
         const font = new FontFace(name, `url(${url})`);
-        const loadPromise = font.load().then(() => {
-            document.fonts.add(font);
+        
+        const loadPromise = font.load().then(loadedFont => {
+            document.fonts.add(loadedFont);
             return true;
+        }).catch(e => {
+             console.warn(`[시스템] 폰트 '${name}' 로딩 실패:`, e);
+             return false;
         });
+
         const timeoutPromise = new Promise((resolve) => {
             setTimeout(() => {
-                console.warn("[System] Font load timed out. Using fallback.");
+                console.warn(`[시스템] 폰트 '${name}' 로딩 시간 초과. 기본 폰트를 사용합니다.`);
                 resolve(false);
             }, timeout);
         });
+
         return await Promise.race([loadPromise, timeoutPromise]);
+
     } catch (e) {
-        console.warn("[System] Font loading failed:", e);
+        console.warn(`[시스템] 폰트 로딩 중 예상치 못한 오류:`, e);
         return false;
     }
 }
 
-// Main function to generate and download the image
+// 메인 이미지 생성 함수
 window.generateImage = async function() {
     const ids = [...checkedItems[currentTab]];
-    if (ids.length === 0) return alert("No items selected!");
+    if (ids.length === 0) return alert("선택된 아이템이 없습니다!");
     
+    // 옵션 가져오기
     const showNameEl = document.getElementById('showName');
     const showPriceEl = document.getElementById('showPrice');
     const btn = document.getElementById('genBtn');
@@ -374,54 +388,52 @@ window.generateImage = async function() {
     const showPrice = showPriceEl ? showPriceEl.checked : true;
     
     const originalText = btn.innerText;
-    btn.innerText = "Loading Fonts...";
+    btn.innerText = "폰트 로딩 중...";
     btn.disabled = true;
 
     try {
-        // Load 'Jua' font for title
-        await loadFontWithTimeout('Jua', 'https://fonts.gstatic.com/s/jua/v14/co364W5X5_Y8yykk.woff2');
-        btn.innerText = "Generating...";
+        // [수정됨] 로컬 'Paperlogy.ttf' 폰트 로딩
+        await loadFontWithTimeout('Paperlogy', 'Paperlogy.ttf');
+        
+        btn.innerText = "이미지 생성 중...";
 
         const items = ids.map(id => productData.find(p => p.id === id)).filter(p => p);
         const cvs = document.createElement('canvas');
         const ctx = cvs.getContext('2d');
 
-        // Layout Configuration
-        // Dynamic columns based on item count (max 4)
+        // 레이아웃 설정
         const cols = Math.min(items.length, 4); 
         const rows = Math.ceil(items.length / cols);
         const cardW = 300, cardH = 420;
         const gap = 30, padding = 60;
-        // Increased header height for better spacing
         const headerH = 220; 
-        const cornerRadius = 40;
+        const cornerRadius = 40; 
 
-        // Calculate total canvas size
+        // 캔버스 크기 계산
         cvs.width = padding * 2 + (cardW * cols) + (gap * (cols - 1));
         cvs.height = headerH + padding * 2 + (cardH * rows) + (gap * (rows - 1));
 
-        // *** Apply global rounded corners (clipping) FIRST ***
+        // *** 전체 둥근 모서리 클리핑 (가장 먼저 실행) ***
         roundedRect(ctx, 0, 0, cvs.width, cvs.height, cornerRadius);
         ctx.clip(); 
 
-        // Fill background
+        // 배경색 채우기
         ctx.fillStyle = "#fdfbf7";
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // Draw Header Background (Fixed to 'owned' theme color as requested)
+        // 헤더 배경 그리기 (보유 테마 색상 고정)
         ctx.fillStyle = "#aeb4d1"; 
         ctx.fillRect(0, 0, cvs.width, headerH);
 
-        // Draw Title (Centered vertically and horizontally in header)
-        ctx.font = "bold 70px 'Jua', sans-serif";
+        // 타이틀 그리기 (폰트 변경됨: Paperlogy)
+        ctx.font = "bold 70px 'Paperlogy', sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle"; 
-        ctx.fillStyle = "white"; // White text for better contrast on header
+        ctx.fillStyle = "white"; 
         const titleText = currentTab === 'owned' ? "내 농담곰 컬렉션" : "농담곰 위시리스트";
-        // Y-coordinate is half of header height for vertical centering
         ctx.fillText(titleText, cvs.width / 2, headerH / 2);
 
-        // Helper to load images asynchronously
+        // 이미지 로드 헬퍼
         const loadImage = (src) => new Promise(resolve => {
             const img = new Image();
             img.crossOrigin = "Anonymous";
@@ -430,7 +442,7 @@ window.generateImage = async function() {
             img.onerror = () => resolve(null);
         });
 
-        // Draw item cards grid
+        // 아이템 카드 루프
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             const c = i % cols;
@@ -438,7 +450,7 @@ window.generateImage = async function() {
             const x = padding + c * (cardW + gap);
             const y = headerH + padding + r * (cardH + gap);
 
-            // Draw card background and shadow
+            // 카드 배경
             ctx.save();
             roundedRect(ctx, x, y, cardW, cardH, 20); 
             ctx.fillStyle = "white";
@@ -447,15 +459,14 @@ window.generateImage = async function() {
             ctx.shadowOffsetY = 5;
             ctx.fill();
             
-            // Draw card border
+            // 카드 테두리
             ctx.shadowColor = "transparent";
             ctx.strokeStyle = "#eae8e4";
             ctx.lineWidth = 2;
             ctx.stroke();
-            // Clip content inside the card
             ctx.clip(); 
 
-            // Draw product image fitting within the card area
+            // 상품 이미지
             const img = await loadImage(item.image);
             if (img) {
                 const aspect = img.width / img.height;
@@ -465,13 +476,13 @@ window.generateImage = async function() {
             }
             ctx.restore();
 
-            // Draw text (Name and Price)
+            // 텍스트 (상품명 및 가격)
             ctx.textAlign = "center";
             ctx.textBaseline = "alphabetic";
             
-            // Product Name with word wrapping
             if (showName) {
                 ctx.fillStyle = "#2d3436";
+                // 상품명 폰트는 가독성을 위해 기존 고운돋움 유지 (필요 시 Paperlogy로 변경 가능)
                 ctx.font = "bold 22px 'Gowun Dodum', sans-serif";
                 const name = item.nameKo;
                 const words = name.split(' ');
@@ -486,7 +497,6 @@ window.generateImage = async function() {
                 ctx.fillText(line, x + cardW/2, lineY);
             }
 
-            // Product Price
             if (showPrice) {
                 ctx.fillStyle = "#a4b0be";
                 ctx.font = "bold 18px 'Gowun Dodum', sans-serif";
@@ -495,14 +505,14 @@ window.generateImage = async function() {
             }
         }
 
-        // Trigger image download
+        // 다운로드
         const link = document.createElement('a');
         link.download = `nongdam_${currentTab}_list.png`;
         link.href = cvs.toDataURL('image/png');
         link.click();
 
     } catch (err) {
-        alert("Image Generation Error: " + err.message);
+        alert("이미지 생성 오류: " + err.message);
         console.error(err);
     } finally {
         btn.innerText = originalText;
