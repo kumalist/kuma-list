@@ -5,7 +5,7 @@ const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM';
 const SHEET_TITLE = '시트1'; 
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_TITLE}`;
 
-// data.js 
+// data.js 대신 여기에 회사 정보 포함
 const companyInfo = {
     groups: {
         old: ["b-flat", "Anova", "Furyu"],
@@ -216,7 +216,7 @@ function resetRecords() {
 }
 
 // ============================================================
-// 4. 이미지 생성 로직 (★누나 요청사항 완벽 반영 버전★)
+// 4. 이미지 생성 로직 
 // ============================================================
 
 // 헬퍼: 둥근 사각형 그리기
