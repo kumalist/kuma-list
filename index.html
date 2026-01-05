@@ -3,208 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>농담곰 인형 리스트</title>
+    <title>농담곰 인형 체크 리스트</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
-        body {
-            font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* 1. 타이틀 헤더 높이 축소 & 디자인 */
-        .list-header {
-            text-align: center;
-            padding: 15px 0; /* 높이 줄임 */
-            background-color: #fff;
-            border-bottom: 2px solid #eee;
-            margin-bottom: 15px;
-            width: 100%;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .list-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #333;
-            margin: 0;
-        }
-        
-        /* 닉네임 표시 (기본 숨김) */
-        .user-nickname {
-            font-size: 0.9rem;
-            color: #888;
-            margin-top: 5px;
-            font-weight: normal;
-            display: none; 
-        }
-
-        .list-container {
-            width: 100%;
-            max-width: 600px;
-            background-color: white;
-            padding: 0;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            overflow: hidden; /* 자식 요소 튀어나옴 방지 */
-        }
-
-        .items-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 한 줄에 3개 */
-            gap: 10px;
-            padding: 15px;
-        }
-
-        /* 예시 아이템 스타일 (데이터 연동 전 보여주기용) */
-        .item-card {
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-        }
-        .item-img {
-            width: 80px;
-            height: 80px;
-            background-color: #ddd;
-            border-radius: 50%;
-            margin: 0 auto 5px;
-        }
-        .item-name { font-size: 0.8rem; font-weight: bold; }
-
-        /* 저장 옵션 패널 스타일 */
-        .save-options {
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            background-color: #fff;
-            width: 100%;
-            max-width: 560px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .save-options h3 { margin-top: 0; }
-
-        .option-group {
-            margin-bottom: 15px;
+        /* 닉네임 입력창 등 추가 스타일 (style.css에 넣어도 돼!) */
+        .option-row {
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-bottom: 8px;
             flex-wrap: wrap;
         }
-
-        .option-group label { font-weight: bold; font-size: 0.95rem; }
-
-        /* 입력창 스타일 */
-        input[type="text"] {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 0.9rem;
+        .custom-title-input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-top: 4px;
         }
-
-        button {
-            background-color: #333;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 10px;
+        .nickname-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 5px;
+            width: 100%;
         }
-        button:hover { background-color: #555; }
-
-        .btn-reset { background-color: #e74c3c; }
-        .btn-reset:hover { background-color: #c0392b; }
+        .nickname-input {
+            flex: 1;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="captureArea" class="list-container">
-        <div class="list-header">
-            <h1 class="list-title" id="displayTitle">[농담곰 인형 보유 리스트]</h1>
-            <div class="user-nickname" id="displayNickname"></div>
-        </div>
+    <div class="app-container">
+        
+        <aside class="sidebar">
+            <div class="sidebar-title">NONGDAMGOM</div>
+            
+            <div class="tab-container">
+                <button class="tab-btn active" data-tab="owned" onclick="switchTab('owned')">보유</button>
+                <button class="tab-btn" data-tab="wish" onclick="switchTab('wish')">위시</button>
+            </div>
 
-        <div class="items-grid" id="itemsGrid">
-            <div class="item-card"><div class="item-img"></div><div class="item-name">예시 인형 1</div></div>
-            <div class="item-card"><div class="item-img"></div><div class="item-name">예시 인형 2</div></div>
-            <div class="item-card"><div class="item-img"></div><div class="item-name">예시 인형 3</div></div>
-        </div>
+            <div class="filter-item-wrapper">
+                <div class="filter-group">
+                    <button class="text-btn active" onclick="setFilter('country', 'all')">ALL</button>
+                    <div class="flag-btn" style="background-image: url('images/icon_flag/flag_kr.png');" onclick="setFilter('country', 'korea')">
+                        <div class="overlay">한국</div>
+                    </div>
+                    <div class="flag-btn" style="background-image: url('images/icon_flag/flag_jp.png');" onclick="setFilter('country', 'japan')">
+                        <div class="overlay">일본</div>
+                    </div>
+                    <div class="flag-btn" style="background-image: url('images/icon_flag/flag_cn.png');" onclick="setFilter('country', 'china')">
+                        <div class="overlay">중국</div>
+                    </div>
+                    <div class="flag-btn" style="background-image: url('images/icon_flag/flag_tw.png');" onclick="setFilter('country', 'taiwan')">
+                        <div class="overlay">대만</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-item-wrapper">
+                <span class="filter-label">캐릭터</span>
+                <div class="filter-group">
+                    <button class="text-btn active" onclick="setFilter('character', 'all')">ALL</button>
+                    <div class="char-btn" style="background-image: url('images/icon_characters/icon_kuma.png');" onclick="setFilter('character', 'kuma')">
+                        <div class="overlay">농담곰</div>
+                    </div>
+                    <div class="char-btn" style="background-image: url('images/icon_characters/icon_mogukoro.png');" onclick="setFilter('character', 'mogukoro')">
+                        <div class="overlay">두더지<br>고로케</div>
+                    </div>
+                    <div class="char-btn" style="background-image: url('images/icon_characters/icon_pug.png');" onclick="setFilter('character', 'pug')">
+                        <div class="overlay">퍼그 상</div>
+                    </div>
+                    <div class="char-btn" style="background-image: url('images/icon_characters/icon_ngn.png');" onclick="setFilter('character', 'ngn')">
+                        <div class="overlay">기타</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-item-wrapper">
+                <span class="filter-label">회사</span>
+                <div class="filter-group" data-type="company">
+                    <button class="text-btn active" onclick="setCompanyFilter('all')" data-val="all">ALL</button>
+                    <button class="text-btn" onclick="setCompanyFilter('old')" data-val="old">예전</button>
+                    <button class="text-btn" onclick="setCompanyFilter('new')" data-val="new">현재</button>
+                </div>
+                <div id="old-subs" class="sub-filter-container"></div>
+                <div id="new-subs" class="sub-filter-container"></div>
+            </div>
+
+            <div class="filter-actions">
+                <button class="reset-btn" onclick="resetFilters()">🔄 필터 리셋</button>
+                <button class="reset-btn record-reset" onclick="resetRecords()">🗑️ 기록 삭제</button>
+            </div>
+
+            <hr class="sidebar-divider">
+            
+            <div class="save-options">
+                <span class="filter-label">저장 옵션</span>
+                
+                <div class="option-row">
+                    <input type="text" id="imgTitleInput" class="custom-title-input" value="농담곰 인형 보유 리스트">
+                </div>
+
+                <div class="option-row">
+                    <label class="option-check">
+                        <input type="checkbox" id="showName" checked> 상품명
+                    </label>
+                    <label class="option-check">
+                        <input type="checkbox" id="showPrice" checked> 가격
+                    </label>
+                </div>
+                
+                <div class="nickname-group">
+                    <label class="option-check">
+                        <input type="checkbox" id="showNick">
+                    </label>
+                    <input type="text" id="nickInput" class="nickname-input" placeholder="닉네임 (작성 시 자동 체크)" oninput="toggleNickCheck()">
+                </div>
+
+                <button class="action-btn" id="genBtn" onclick="generateImage()">이미지 저장</button>
+            </div>
+
+        </aside>
+
+        <main class="main-content">
+            <div id="listContainer" class="list-container">
+                </div>
+        </main>
+
     </div>
 
-    <div class="save-options">
-        <h3>🎨 리스트 꾸미기 옵션</h3>
-        
-        <div class="option-group">
-            <label>📝 제목 변경:</label>
-            <input type="text" id="titleInput" value="[농담곰 인형 보유 리스트]" style="width: 250px;">
-        </div>
-
-        <div class="option-group">
-            <label style="cursor: pointer;">
-                <input type="checkbox" id="nicknameCheck" disabled> 
-                닉네임 표기
-            </label>
-            <input type="text" id="nicknameInput" placeholder="닉네임을 입력하세요" style="width: 200px;">
-        </div>
-        
-        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
-
-        <button onclick="saveImage()">📸 이미지로 저장하기</button>
-        </div>
-
-    <script>
-        // 요소 가져오기
-        const titleInput = document.getElementById('titleInput');
-        const displayTitle = document.getElementById('displayTitle');
-        const nicknameInput = document.getElementById('nicknameInput');
-        const nicknameCheck = document.getElementById('nicknameCheck');
-        const displayNickname = document.getElementById('displayNickname');
-
-        // 3. 타이틀 실시간 반영
-        titleInput.addEventListener('input', function() {
-            displayTitle.textContent = this.value;
-        });
-
-        // 4. 닉네임 로직 (입력하면 체크되고, 지우면 해제됨)
-        nicknameInput.addEventListener('input', function() {
-            const text = this.value.trim();
-            if (text.length > 0) {
-                nicknameCheck.checked = true;
-                displayNickname.textContent = "작성자 : " + text; // '작성자 :' 같은 걸 붙여도 좋고 그냥 text만 넣어도 됨
-                displayNickname.style.display = 'block';
-            } else {
-                nicknameCheck.checked = false;
-                displayNickname.style.display = 'none';
-            }
-        });
-
-        // 캡쳐 기능
-        function saveImage() {
-            const captureArea = document.getElementById('captureArea');
-            
-            // 캡쳐 시 해상도 이슈 방지 옵션
-            html2canvas(captureArea, {
-                scale: 2, 
-                backgroundColor: null,
-                useCORS: true 
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'nongdamgom_list.png';
-                link.href = canvas.toDataURL();
-                link.click();
-            });
-        }
-        
-        // 여기에 구글 스프레드시트 데이터 불러오는 코드가 있다면 추가해야 해!
-        // (지금은 화면이 잘 나오는지 확인하기 위해 '예시 인형' 박스만 넣어뒀어)
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
