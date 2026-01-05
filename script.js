@@ -1,11 +1,11 @@
-// script.js 최종
-
-// 1. 구글 시트 및 회사 데이터 설정
-const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM'; // 누나의 진짜 시트 ID
+// ============================================================
+// 1. 기본 설정 및 데이터 (Google Sheet ID 확인!)
+// ============================================================
+const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM'; 
 const SHEET_TITLE = '시트1'; 
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_TITLE}`;
 
-// data.js가 없어졌으니 여기에 회사 정보를 넣어줘야 해!
+// data.js 
 const companyInfo = {
     groups: {
         old: ["b-flat", "Anova", "Furyu"],
@@ -22,7 +22,7 @@ const companyInfo = {
     }
 };
 
-let productData = []; // 시트에서 가져온 데이터가 여기 담김
+let productData = [];
 let currentTab = 'owned'; 
 let filters = { country: 'all', character: 'all', companyGroup: 'all', companySpecific: null };
 
@@ -33,7 +33,9 @@ let checkedItems = {
 
 const listContainer = document.getElementById('listContainer');
 
-// 2. 초기화 함수
+// ============================================================
+// 2. 초기화 및 데이터 로드
+// ============================================================
 async function init() {
     listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">농담곰 친구들 불러오는 중... 🐻</div>';
     await fetchSheetData(); 
@@ -42,7 +44,6 @@ async function init() {
     updateTabUI();
 }
 
-// 3. 구글 시트 데이터 로드
 async function fetchSheetData() {
     try {
         const response = await fetch(SHEET_URL);
@@ -65,7 +66,7 @@ async function fetchSheetData() {
         console.log("데이터 로딩 완료!", productData);
     } catch (err) {
         console.error("데이터 로드 실패:", err);
-        listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:#ff7675;">데이터를 가져올 수 없어.<br>1. 구글 시트 [웹에 게시] 확인<br>2. 브라우저 보안 정책 때문에 로컬 실행(더블클릭)은 안 됨!<br>3. Live Server나 깃허브를 이용해줘!</div>';
+        listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:#ff7675;">데이터 로드 실패!<br>구글 시트 [웹에 게시] 설정을 확인해주세요.</div>';
     }
 }
 
@@ -84,7 +85,9 @@ function parseCsvRow(row) {
     return result;
 }
 
-// 4. 화면 렌더링 및 기능 로직
+// ============================================================
+// 3. 화면 렌더링 및 필터 로직
+// ============================================================
 function switchTab(tab) {
     currentTab = tab;
     if (tab === 'wish') document.body.classList.add('theme-wish');
@@ -212,20 +215,11 @@ function resetRecords() {
     if (confirm(`[${listName} 리스트]의 체크 기록을 모두 삭제하시겠습니까?`)) { checkedItems[currentTab].clear(); saveData(); renderList(); alert(`초기화되었습니다.`); }
 }
 
-// ... (위쪽 코드들은 그대로 유지) ...
+// ============================================================
+// 4. 이미지 생성 로직 (★누나 요청사항 완벽 반영 버전★)
+// ============================================================
 
-// =========================================
-// ▼▼▼ 여기부터 끝까지 복사해서 덮어씌워줘! ▼▼▼
-// =========================================
-
-// 폰트 로딩을 위한 헬퍼 함수 (캔버스에서 폰트 깨짐 방지)
-async function loadFont(name, url) {
-    const font = new FontFace(name, `url(${url})`);
-    await font.load();
-    document.fonts.add(font);
-}
-
-// 둥근 사각형 그리기 헬퍼 함수
+// 헬퍼: 둥근 사각형 그리기
 function roundedRect(ctx, x, y, width, height, radius) {
     ctx.beginPath();
     ctx.moveTo(x + radius, y);
@@ -240,34 +234,14 @@ function roundedRect(ctx, x, y, width, height, radius) {
     ctx.closePath();
 }
 
-// 이미지 생성 함수 (최종 수정판)
-// ===============================================
-// ▼ script.js 아래쪽 generateImage 관련 함수들 교체 ▼
-// ===============================================
-
-// 1. 둥근 사각형 그리기 헬퍼 함수
-function roundedRect(ctx, x, y, width, height, radius) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-}
-
-// 2. 폰트 로딩 함수 (이미지에서 글씨 깨짐 방지)
+// 헬퍼: 폰트 로딩 (깨짐 방지)
 async function loadFont(name, url) {
     const font = new FontFace(name, `url(${url})`);
     await font.load();
     document.fonts.add(font);
 }
 
-// 3. 이미지 생성 함수 (최종 수정판)
+// 메인: 이미지 생성 함수
 async function generateImage() {
     const ids = [...checkedItems[currentTab]];
     if (ids.length === 0) return alert("선택된 인형이 없어요!");
@@ -281,7 +255,7 @@ async function generateImage() {
     btn.disabled = true;
 
     try {
-        // 주아체 폰트 로딩
+        // 1. 폰트 먼저 로딩
         await loadFont('Jua', 'https://fonts.gstatic.com/s/jua/v14/co364W5X5_Y8yykk.woff2');
         btn.innerText = "이미지 생성 중...";
 
@@ -289,41 +263,37 @@ async function generateImage() {
         const cvs = document.createElement('canvas');
         const ctx = cvs.getContext('2d');
 
-        // ★ [수정 3] 동적 폭 조절: 아이템이 4개보다 적으면 그 개수만큼만 폭 설정
+        // ★ 요청 3: 아이템 개수에 따른 가로폭 자동 조절 (최대 4칸)
         const cols = Math.min(items.length, 4); 
         const rows = Math.ceil(items.length / cols);
 
         const cardW = 300, cardH = 420;
         const gap = 30, padding = 60;
         
-        // ★ [수정 2] 타이틀 여백 조정: 헤더 높이를 200으로 설정하고 글자를 정중앙에 배치할 예정
+        // ★ 요청 2: 타이틀 여백 넉넉하게 조정 (200px)
         const headerH = 200; 
-        const cornerRadius = 40; // ★ [수정 4] 라운드 반경
+        const cornerRadius = 40; // ★ 요청 4: 라운드 효과
 
-        // 캔버스 크기 설정
         cvs.width = padding * 2 + (cardW * cols) + (gap * (cols - 1));
         cvs.height = headerH + padding * 2 + (cardH * rows) + (gap * (rows - 1));
 
-        // ★ [수정 4] 전체 라운드 효과 (클리핑)
+        // ★ 요청 4: 캔버스 전체 라운드 클리핑
         roundedRect(ctx, 0, 0, cvs.width, cvs.height, cornerRadius);
-        ctx.clip(); // 이 아래로는 둥근 영역 안쪽에만 그려짐
+        ctx.clip(); 
 
-        // 배경색 채우기
+        // 배경색
         ctx.fillStyle = "#fdfbf7";
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // ★ [수정 5] 테마 통일: 위시리스트여도 무조건 '보유(파랑)' 색상(#aeb4d1) 사용
-        // 나중에 테마 기능 넣을 때 여기를 변수로 바꾸면 됨!
+        // ★ 요청 5: 테마 색상 '보유' 테마(#aeb4d1)로 고정
         ctx.fillStyle = "#aeb4d1"; 
         
-        // 타이틀 그리기 (가운데 정렬 + 수직 중앙 정렬)
+        // ★ 요청 2, 3: 타이틀 가운데 정렬 (높이 중앙, 가로 중앙)
         ctx.font = "bold 70px 'Jua', sans-serif";
         ctx.textAlign = "center";
-        ctx.textBaseline = "middle"; // ★ [수정 2] 글자 높이 기준을 가운데로 변경
-        
-        // 제목 내용도 통일할지, 아니면 '위시리스트'라고 띄울지는 선택 (일단 텍스트는 구분함)
+        ctx.textBaseline = "middle"; 
         const titleText = currentTab === 'owned' ? "내 농담곰 컬렉션" : "농담곰 위시리스트";
-        ctx.fillText(titleText, cvs.width / 2, headerH / 2); // 헤더의 정중앙(높이 100지점)에 배치
+        ctx.fillText(titleText, cvs.width / 2, headerH / 2);
 
         const loadImage = (src) => new Promise(resolve => {
             const img = new Image();
@@ -339,7 +309,7 @@ async function generateImage() {
             const c = i % cols;
             const r = Math.floor(i / cols);
             const x = padding + c * (cardW + gap);
-            const y = headerH + padding + r * (cardH + gap); // 헤더 높이만큼 띄우고 시작
+            const y = headerH + padding + r * (cardH + gap);
 
             ctx.save();
             roundedRect(ctx, x, y, cardW, cardH, 20); // 카드 둥글게
@@ -355,7 +325,6 @@ async function generateImage() {
             ctx.stroke();
             ctx.clip();
 
-            // 이미지 그리기
             const img = await loadImage(item.image);
             if (img) {
                 const aspect = img.width / img.height;
@@ -365,10 +334,9 @@ async function generateImage() {
             }
             ctx.restore();
 
-            // 텍스트 그리기
             if (showName) {
                 ctx.textAlign = "center";
-                ctx.textBaseline = "alphabetic"; // 다시 기본값으로 복구
+                ctx.textBaseline = "alphabetic";
                 ctx.fillStyle = "#2d3436";
                 ctx.font = "bold 22px 'Gowun Dodum', sans-serif";
                 const name = item.nameKo;
@@ -392,17 +360,24 @@ async function generateImage() {
             }
         }
 
-        // 다운로드
         const link = document.createElement('a');
         link.download = `nongdam_${currentTab}_list.png`;
         link.href = cvs.toDataURL('image/png');
         link.click();
 
     } catch (err) {
-        alert("오류 발생: " + err.message);
+        alert("오류: " + err.message);
         console.error(err);
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
     }
 }
+
+// 이벤트 리스너 등록
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+// 시작!
+init();
