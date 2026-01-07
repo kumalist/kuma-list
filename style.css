@@ -10,12 +10,12 @@
 :root {
     --bg-color: #fafafa;
     --owned-color: #aeb4d1; 
-    --wish-color: #8fb3d1; 
-    --heart-color: #e77277; /* [추가] 하트 색상 (분홍) */
+    --wish-color: #faadb1; /* 위시 탭 메인 컬러 (진분홍) */
+    --heart-color: #e77277; /* 하트 색상 */
     --text-color: #2d3436;
     --border-color: #f5f5f5;
     --sidebar-width: 350px; 
-    --theme-color: var(--owned-color);
+    --theme-color: var(--owned-color); /* 기본 테마는 보유(하늘색) */
 }
 
 /* 폰트 강제 적용 */
@@ -33,10 +33,15 @@ body {
     display: flex; flex-direction: column;
 }
 
-/* body 전체에 테마 컬러 적용 */
+/* [중요] 위시 탭 활성화 시 테마 컬러 변경 */
 body.theme-wish { 
     --theme-color: var(--wish-color); 
 }
+
+/* [추가] 위시 모드일 때 사이드바 텍스트 색상 변경 (연분홍) */
+body.theme-wish .tab-btn:not(.active) { color: #fdd2d6; }
+body.theme-wish .filter-label { color: #fdd2d6; } 
+body.theme-wish .sub-btn { color: #fdd2d6; } 
 
 .app-container { display: flex; height: 100%; width: 100%; max-width: none; margin: 0; }
 
@@ -71,9 +76,6 @@ body.theme-wish {
     cursor: pointer; transition: 0.2s;
 }
 
-/* 위시 모드 텍스트 컬러 */
-body.theme-wish .tab-btn:not(.active) { color: #a1c2dd; }
-
 .tab-btn.active { background: white; color: var(--theme-color); box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-weight: bold; }
 
 /* 사이드바 내부 모아보기 버튼 스타일 */
@@ -91,8 +93,6 @@ body.theme-wish .tab-btn:not(.active) { color: #a1c2dd; }
     margin-bottom: 0; 
     text-align: center; display: block; 
 }
-/* 위시 모드 라벨 */
-body.theme-wish .filter-label { color: #a1c2dd; } 
 
 .filter-section {
     display: flex; 
@@ -137,8 +137,6 @@ body.theme-wish .filter-label { color: #a1c2dd; }
 .sub-filter-container.show { display: flex; width: 100%; }
 
 .sub-btn { padding: 5px 10px; border: 1px solid #dfe6e9; border-radius: 6px; background: #f8f9fa; cursor: pointer; font-size: 12px; color: #b2bec3; }
-/* 위시 모드 서브 버튼 텍스트 */
-body.theme-wish .sub-btn { color: #a1c2dd; } 
 
 .sub-btn.active { background: var(--theme-color); color: white; border-color: var(--theme-color); }
 body.theme-wish .sub-btn.active { color: white; }
@@ -150,6 +148,7 @@ body.theme-wish .sub-btn.active { color: white; }
     font-size: 13px; cursor: pointer; transition: 0.2s;
     display: flex; justify-content: center; align-items: center;
 }
+/* [수정] 리셋 버튼 호버 시 테마 색상 따라가도록 변경 */
 .reset-btn:hover { background: #f1f2f6; border-color: var(--theme-color); color: var(--theme-color); }
 
 /* 기록 삭제 호버 */
@@ -225,14 +224,13 @@ body.theme-wish .sub-btn.active { color: white; }
 .item-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 .item-card.checked { border: 2px solid var(--theme-color); }
 
-/* 위시 모드 체크된 카드 배경색 */
-body:not(.theme-wish) .item-card.checked { background: #f4f6ff; }
-body.theme-wish .item-card.checked { background: #dbeef8; }
+/* [추가] 위시 모드일 때만 체크된 카드 배경색 변경 */
+body.theme-wish .item-card.checked { background: #fff0f342; /* 핑크 배경 */ }
 
 .item-img-wrapper { width: 100%; aspect-ratio: 1/1; position: relative; background: #fff; border-bottom: 1px solid #f8f9fa; }
 .item-img-wrapper img { width: 100%; height: 100%; object-fit: contain; padding: 15px; box-sizing: border-box; }
 
-/* [수정] 체크 오버레이 스타일 변경 (블러 제거, 투명 배경) */
+/* 체크 오버레이 */
 .check-overlay { 
     position: absolute; 
     top: 0; left: 0; width: 100%; height: 100%; 
@@ -241,20 +239,20 @@ body.theme-wish .item-card.checked { background: #dbeef8; }
     justify-content: flex-end; /* 우측 정렬 */
     opacity: 0; 
     transition: 0.2s; 
-    background: transparent; /* 배경 투명하게 (이미지 잘 보이게) */
+    background: transparent; /* 배경 투명하게 */
     backdrop-filter: none; /* 블러 제거 */
     pointer-events: none; /* 오버레이가 클릭 방해 안 하게 */
 }
 
-/* [수정] 체크 마크 아이콘 스타일 (우측 상단 작게) */
+/* 체크 마크 아이콘 스타일 */
 .check-overlay::after { 
     content: '✔'; 
-    font-size: 16px; /* 아이콘 크기 축소 */
+    font-size: 16px; 
     color: white; 
     font-weight: bold; 
     background: var(--theme-color); 
     border-radius: 50%; 
-    width: 28px; /* 원 크기 축소 */
+    width: 28px; 
     height: 28px; 
     display: flex; 
     align-items: center; 
@@ -293,10 +291,10 @@ body.theme-wish .item-card.checked:not(.owned-in-wish) .check-overlay::after {
     padding: 3px 8px; border-radius: 4px; display: inline-block; 
 }
 
-/* 위시 모드 가격표 스타일 */
+/* [추가] 위시 모드 가격표 스타일 */
 body.theme-wish .item-price {
-    background: #dbeef8;
-    color: #a1c2dd;
+    background: #ffe3e6; /* 연한 분홍 배경 */
+    color: var(--wish-color); /* 진분홍 글씨 */
 }
 
 .view-check-label {
@@ -315,9 +313,9 @@ body.theme-wish .item-price {
     transition: 0.2s;
 }
 
-.view-check-label:hover {
-    background: #f1f2f6;
-}
+/* [추가] 위시 모드일 때 모아보기 버튼 호버 색상 */
+body.theme-wish .view-check-label:hover { background: #fff0f3; }
+body:not(.theme-wish) .view-check-label:hover { background: #f1f2f6; }
 
 .view-check-label input {
     accent-color: var(--theme-color);
@@ -333,7 +331,7 @@ body.theme-wish .item-price {
     margin-left: 5px;
 }
 
-/* [수정] 맨 위로 가기 버튼: 하얀색 원형, 항상 표시 */
+/* 맨 위로 가기 버튼: 하얀색 원형, 항상 표시 */
 #scrollTopBtn {
     display: block !important; /* 항상 표시 */
     opacity: 1 !important; /* 투명도 제거 */
