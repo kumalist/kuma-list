@@ -1,4 +1,4 @@
-// script.js (최종 수정본)
+// script.js (위시리스트 회색 체크 강제 적용 수정본)
 
 // [설정] 구글 스프레드시트 ID
 const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM';
@@ -19,8 +19,34 @@ const listContainer = document.getElementById('listContainer');
 const mainContent = document.getElementById('mainContent'); 
 const scrollTopBtn = document.getElementById('scrollTopBtn'); 
 
+// [추가] 강제 스타일 주입 함수 (CSS 파일 무시하고 회색 체크마크 강제 적용)
+function injectGrayStyle() {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        /* 위시리스트 내 보유 아이템(회색 잠금) 스타일 강제 적용 */
+        .item-card.owned-in-wish {
+            border-color: #b2bec3 !important;
+            background-color: #f1f2f6 !important;
+            cursor: default !important;
+        }
+        /* 체크마크 원 색상: 회색으로 강제 변경 */
+        .item-card.owned-in-wish .check-overlay::after {
+            background-color: #b2bec3 !important;
+            box-shadow: none !important;
+            content: '✔' !important; /* 체크 표시 강제 */
+        }
+        /* 가격표 색상 변경 */
+        .item-card.owned-in-wish .item-price {
+            background-color: #e2e6ea !important;
+            color: #b2bec3 !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 // 초기화 함수
 async function init() {
+    injectGrayStyle(); // [중요] 강제 스타일 주입 실행
     await fetchData(); 
     renderList();
     updateTabUI();
@@ -28,7 +54,7 @@ async function init() {
     // 스크롤 이벤트
     mainContent.addEventListener('scroll', scrollFunction);
 
-    // [PC 버그 수정] 체크박스 이벤트 리스너 강제 등록
+    // 이벤트 리스너 등록
     const viewCheckInput = document.getElementById('viewCheckedOnly');
     if (viewCheckInput) {
         viewCheckInput.addEventListener('change', toggleViewChecked);
@@ -90,6 +116,7 @@ function parseCSV(csvText) {
 function switchTab(tab) {
     currentTab = tab;
     
+    // 테마 적용
     if (tab === 'wish') { 
         document.body.classList.add('theme-wish'); 
     } else { 
@@ -133,7 +160,7 @@ function toggleViewChecked() {
     renderList();
 }
 
-// [핵심 수정] 리스트 렌더링 함수
+// [핵심] 리스트 렌더링 함수
 function renderList() {
     listContainer.innerHTML = '';
     
@@ -165,7 +192,7 @@ function renderList() {
         let totalCount = groupItems.length;
         let checkedCount = 0;
 
-        // [수정] 무조건 '보유(owned)' 리스트에 있는 것만 카운트
+        // [카운트] 무조건 '보유(owned)' 리스트에 있는 것만 계산
         groupItems.forEach(item => {
             if (checkedItems.owned.has(item.id)) {
                 checkedCount++;
@@ -178,51 +205,58 @@ function renderList() {
 
         groupItems.forEach(item => {
             const isOwned = checkedItems.owned.has(item.id); 
-            const isWished = checkedItems.wish.has(item.id); // 위시 체크 여부
-
-            let isChecked = false;
-            let isLocked = false; 
+            const isWished = checkedItems.wish.has(item.id);
+            
+            let displayClass = ''; 
+            let isLocked = false;  
 
             // 1. [상태 결정 로직]
             if (currentTab === 'owned') {
-                isChecked = isOwned;
+                if (isOwned) displayClass = 'checked';
             } else {
-                // 위시 탭일 때
+                // [위시 탭]
                 if (isOwned) {
-                    isChecked = true; // 체크 표시(✔)는 나오지만
-                    isLocked = true;  // 잠금(회색) 처리됨
-                } else {
-                    isChecked = isWished; // 실제 위시 체크 여부
+                    // ★ 핵심 수정 ★
+                    // checked: 체크표시(✔)를 나오게 함
+                    // owned-in-wish: 회색 스타일을 적용함
+                    // 이 두 개를 같이 줘야 '회색 체크'가 됨
+                    displayClass = 'checked owned-in-wish'; 
+                    isLocked = true;
+                } else if (isWished) {
+                    displayClass = 'checked';
                 }
             }
 
             // 2. [모아보기 필터링 로직]
+            let showItem = true;
             if (isViewCheckedOnly) {
-                if (currentTab === 'wish') {
-                    // [수정] 위시 모아보기: 보유한 아이템(isOwned)은 제외! 순수 위시만 표시
-                    if (isOwned) return; 
-                    if (!isWished) return;
+                if (currentTab === 'owned') {
+                    if (!isOwned) showItem = false;
                 } else {
-                    // 보유 모아보기: 미보유 아이템 제외
-                    if (!isChecked) return;
+                    // 위시 모아보기: 보유한 아이템(isOwned)은 숨김! 순수 위시만 표시
+                    if (isOwned) showItem = false; 
+                    if (!isWished) showItem = false;
                 }
 
-                // 모아보기 상태에서는 시각적 효과 제거 (원본 감상)
-                isChecked = false; 
-                isLocked = false; 
+                if (showItem) {
+                    // 모아보기 통과 시: 원본 감상을 위해 효과 제거
+                    displayClass = ''; 
+                    isLocked = false;
+                }
             }
+
+            if (!showItem) return;
 
             visibleItemCount++;
 
-            // 3. 카드 생성 및 클래스 부여
             const card = document.createElement('div');
-            // isLocked가 true면 'owned-in-wish' 클래스가 붙어서 CSS에 의해 회색으로 변함
-            card.className = `item-card ${isChecked ? 'checked' : ''} ${isLocked ? 'owned-in-wish' : ''}`;
+            card.className = `item-card ${displayClass}`;
             
-            // 4. 클릭 이벤트 처리
+            // 3. 클릭 이벤트
             if (!isViewCheckedOnly) {
                 card.onclick = () => {
-                    if (isLocked) return; // 잠금 상태면 클릭 안됨
+                    // 위시탭에서 보유중인 아이템(잠금)은 클릭 불가
+                    if (isLocked) return; 
                     toggleCheck(item.id, card);
                 };
             } else {
@@ -269,13 +303,11 @@ function getFilteredData() {
 function toggleCheck(id, cardElement) {
     if (checkedItems[currentTab].has(id)) { 
         checkedItems[currentTab].delete(id); 
-        cardElement.classList.remove('checked'); 
     } else { 
         checkedItems[currentTab].add(id); 
-        cardElement.classList.add('checked'); 
     }
     saveData();
-    renderList(); // 데이터 변경 시 전체 리스트 갱신
+    renderList();
 }
 
 function saveData() { localStorage.setItem(`nongdam_${currentTab}`, JSON.stringify([...checkedItems[currentTab]])); }
@@ -326,7 +358,7 @@ function toggleNickCheck() {
 }
 
 function scrollFunction() {
-    // 탑 버튼 항상 표시 (로직 제거)
+    // 탑 버튼 항상 표시
 }
 
 function scrollToTop() {
@@ -343,7 +375,6 @@ async function generateImage(mode = 'all') {
         sourceData = getFilteredData();
     }
 
-    // 이미지 저장 시 포함할 아이템 필터링
     const items = sourceData.filter(p => {
         const isOwned = checkedItems.owned.has(p.id);
         const isWished = checkedItems.wish.has(p.id);
@@ -351,7 +382,7 @@ async function generateImage(mode = 'all') {
         if (currentTab === 'owned') {
             return isOwned;
         } else {
-            // 위시 탭 이미지 저장 시: 보유한 건 제외하고 순수 위시만
+            // 위시 탭 이미지: 보유한 건 제외, 순수 위시만
             if (isOwned) return false;
             return isWished;
         }
