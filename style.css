@@ -10,7 +10,7 @@
 :root {
     --bg-color: #fafafa;
     --owned-color: #aeb4d1; 
-    --wish-color: #a1c2dd; 
+    --wish-color: #8fb3d1; 
     --text-color: #2d3436;
     --border-color: #f5f5f5;
     --sidebar-width: 350px; 
@@ -51,6 +51,9 @@ body.theme-wish {
     flex-shrink: 0; z-index: 10;
     box-shadow: 2px 0 10px rgba(0,0,0,0.03);
 }
+
+/* PC에서는 상단 X버튼 숨김 */
+.sidebar-mobile-header { display: none; }
 
 .sidebar-title {
     font-family: 'Paperlogy', sans-serif;
@@ -209,9 +212,9 @@ body.theme-wish .sub-btn.active { color: white; }
 .item-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 .item-card.checked { border: 2px solid var(--theme-color); }
 
-/* [수정] 위시 모드 체크된 카드 배경색: 연한 하늘색(#dbeef8) */
+/* 위시 모드 체크된 카드 배경색 */
 body:not(.theme-wish) .item-card.checked { background: #f4f6ff; }
-body.theme-wish .item-card.checked { background: #eaf5fa; }
+body.theme-wish .item-card.checked { background: #dbeef8; }
 
 .item-img-wrapper { width: 100%; aspect-ratio: 1/1; position: relative; background: #fff; border-bottom: 1px solid #f8f9fa; }
 .item-img-wrapper img { width: 100%; height: 100%; object-fit: contain; padding: 15px; box-sizing: border-box; }
@@ -243,11 +246,11 @@ body.theme-wish .item-card.checked { background: #eaf5fa; }
 
 /* 위시 모드 가격표 스타일 */
 body.theme-wish .item-price {
-    background: #f2fbff;
+    background: #dbeef8;
     color: #a1c2dd;
 }
 
-/* --- 모바일 반응형 스타일 --- */
+/* --- 모바일 반응형 스타일 (화면 너비 768px 이하일 때 적용) --- */
 @media (max-width: 768px) {
     
     .app-container {
@@ -281,8 +284,13 @@ body.theme-wish .item-price {
     .mobile-menu-btn { background: transparent; border: none; padding: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .menu-icon { font-size: 24px; color: var(--theme-color); line-height: 1; transition: 0.2s; }
 
+    /* 회사 하위 필터가 모바일에서 잘 보이도록 강제 flex + 줄바꿈 적용 */
     .sub-filter-container { width: 100%; justify-content: center; }
-    .sub-filter-container.show { display: flex !important; }
+    .sub-filter-container.show { 
+        display: flex !important; 
+        flex-wrap: wrap; 
+        gap: 6px;
+    }
 
     .sidebar {
         position: fixed;
@@ -300,6 +308,25 @@ body.theme-wish .item-price {
     
     .sidebar.active { right: 0; }
     .sidebar .sidebar-title { display: none; }
+
+    /* 모바일 사이드바 내부 상단 헤더 (X 닫기 버튼용) */
+    .sidebar-mobile-header {
+        display: flex;
+        justify-content: flex-end; 
+        padding-bottom: 10px;
+        margin-bottom: 5px;
+    }
+
+    .sidebar-close-icon {
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        color: var(--theme-color);
+        font-weight: bold;
+        cursor: pointer;
+        padding: 5px;
+        line-height: 1;
+    }
 
     .filter-section, .save-options { gap: 10px; }
 
@@ -320,23 +347,34 @@ body.theme-wish .item-price {
 
     .save-options .action-btn { height: 40px; font-size: 13px; }
     
-    .close-sidebar-btn {
-        display: block; width: 100%;
-        padding: 10px; 
-        position: sticky; 
-        bottom: 0;
-        z-index: 50; 
-        margin-top: auto; 
-        background: #f1f2f6; border: none; border-radius: 8px;
-        color: #636e72; font-weight: bold; cursor: pointer; flex-shrink: 0;
-        font-size: 13px;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.05); 
-    }
+    .close-sidebar-btn { display: none; }
 
     .main-content { width: 100%; overflow-y: auto; }
     .list-container { padding-top: 15px; }
     .group-title { margin-top: 20px; font-size: 18px; }
     
+    /* [수정] 모바일 3단 그리드 적용 */
+    .items-grid { 
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 한 줄에 3개 강제 */
+        gap: 8px; /* 간격을 좁힘 (20px -> 8px) */
+    }
+
+    /* [수정] 모바일에서 카드 내용물 크기 축소 */
+    .item-info { padding: 8px 4px; } /* 패딩 축소 */
+    
+    .item-name { 
+        font-size: 12px; /* 글자 크기 축소 (14px -> 12px) */
+        height: 50px; /* 높이 축소 (63px -> 50px) */
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+    
+    .item-price { 
+        font-size: 11px; /* 가격 폰트 축소 */
+        padding: 2px 6px;
+    }
+
     .overlay {
         display: none; position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -348,6 +386,27 @@ body.theme-wish .item-price {
 
 @media (min-width: 769px) {
     .mobile-header { display: none; }
+    .sidebar-mobile-header { display: none; }
     .close-sidebar-btn { display: none; }
     .overlay { display: none; }
+}
+
+/* --- [추가] 위시 리스트 내의 보유 아이템 스타일 (회색 잠금) --- */
+.item-card.owned-in-wish {
+    border-color: #b2bec3 !important; /* 테두리 회색 */
+    background-color: #f1f2f6 !important; /* 배경 연한 회색 */
+    cursor: default; /* 클릭 커서 없애기 */
+    opacity: 0.8; /* 살짝 투명하게 해서 힘 빼기 */
+}
+
+/* 잠금 아이템의 체크마크 색상도 회색으로 */
+.item-card.owned-in-wish .check-overlay::after {
+    background: #b2bec3 !important;
+    box-shadow: none; /* 그림자 제거해서 플랫하게 */
+}
+
+/* 잠금 아이템의 가격표도 회색조로 */
+.item-card.owned-in-wish .item-price {
+    background: #e2e6ea !important;
+    color: #b2bec3 !important;
 }

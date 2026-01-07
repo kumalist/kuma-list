@@ -1,7 +1,13 @@
-// script.js 최종 수정본
+// script.js (이미지 경로 자동 보정 삭제 & 회사 필터 제거 버전)
+
+// [설정] 구글 스프레드시트 ID
+const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM';
+
+// 데이터가 로드될 변수
+let productData = [];
 
 let currentTab = 'owned'; 
-let filters = { country: 'all', character: 'all', companyGroup: 'all', companySpecific: null };
+let filters = { country: 'all', character: 'all' }; // 회사 필터 제외됨
 
 let checkedItems = {
     owned: new Set(JSON.parse(localStorage.getItem('nongdam_owned') || '[]')),
@@ -10,16 +16,65 @@ let checkedItems = {
 
 const listContainer = document.getElementById('listContainer');
 
-function init() {
-    renderCompanySubFilters();
+// 초기화 함수
+async function init() {
+    await fetchData(); 
     renderList();
     updateTabUI();
+}
+
+// 구글 시트 CSV 데이터 가져오기
+async function fetchData() {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+    
+    try {
+        const response = await fetch(url);
+        const text = await response.text();
+        productData = parseCSV(text);
+        console.log("데이터 로드 성공:", productData.length + "개");
+    } catch (error) {
+        console.error("데이터 로드 실패:", error);
+        listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:red;">데이터를 불러오지 못했습니다.<br>잠시 후 다시 시도해주세요.</div>';
+    }
+}
+
+// CSV 파싱 함수
+function parseCSV(csvText) {
+    const rows = csvText.split('\n').map(row => {
+        // 따옴표로 묶인 쉼표 처리
+        const regex = /(?:^|,)(\"(?:[^\"]+|\"\")*\"|[^,]*)/g;
+        let columns = [];
+        let match;
+        while (match = regex.exec(row)) {
+            let col = match[1].replace(/^"|"$/g, '').replace(/""/g, '"');
+            columns.push(col.trim());
+        }
+        return columns;
+    });
+
+    const headers = rows[0]; 
+    const data = [];
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.length < headers.length) continue;
+
+        const item = {};
+        headers.forEach((header, index) => {
+            let value = row[index];
+            
+            // [수정] 이미지 경로 자동 보정 로직 삭제함 (데이터 그대로 사용)
+            item[header] = value;
+        });
+        
+        if(item.id) data.push(item);
+    }
+    return data;
 }
 
 function switchTab(tab) {
     currentTab = tab;
     
-    // 테마 적용 
     if (tab === 'wish') { 
         document.body.classList.add('theme-wish'); 
     } else { 
@@ -29,18 +84,17 @@ function switchTab(tab) {
     updateTabUI();
     renderList();
 
-    // 저장 옵션의 타이틀 변경
     const titleInput = document.getElementById('customTitle');
     if(titleInput) {
         titleInput.value = tab === 'owned' ? "농담곰 인형 보유 리스트" : "농담곰 인형 위시 리스트";
     }
 
-    // 모바일 헤더 뱃지 스위치
     const badge = document.getElementById('mobileModeBadge');
     if (badge) {
         badge.innerText = tab === 'owned' ? "보유" : "위시";
     }
 }
+
 function updateTabUI() {
     document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.toggle('active', btn.dataset.tab === currentTab); });
 }
@@ -50,7 +104,7 @@ function renderList() {
     const filteredData = getFilteredData(); 
 
     if (filteredData.length === 0) {
-        listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">리스트를 찾을 수 없습니다.</div>';
+        listContainer.innerHTML = '<div style="text-align:center; padding:50px; color:#aaa;">해당하는 농담곰이 없어요 😢</div>';
         return;
     }
 
@@ -72,13 +126,34 @@ function renderList() {
         title.className = 'group-title';
         title.innerText = groupName;
         listContainer.appendChild(title);
+        
         const grid = document.createElement('div');
         grid.className = 'items-grid';
+        
         grouped[groupName].forEach(item => {
-            const isChecked = checkedItems[currentTab].has(item.id);
+            const isOwned = checkedItems.owned.has(item.id); 
+            let isChecked = false;
+            let isLocked = false; 
+
+            if (currentTab === 'owned') {
+                isChecked = isOwned;
+            } else {
+                if (isOwned) {
+                    isChecked = true;
+                    isLocked = true; 
+                } else {
+                    isChecked = checkedItems.wish.has(item.id);
+                }
+            }
+
             const card = document.createElement('div');
-            card.className = `item-card ${isChecked ? 'checked' : ''}`;
-            card.onclick = () => toggleCheck(item.id, card);
+            card.className = `item-card ${isChecked ? 'checked' : ''} ${isLocked ? 'owned-in-wish' : ''}`;
+            
+            card.onclick = () => {
+                if (isLocked) return; 
+                toggleCheck(item.id, card);
+            };
+
             card.innerHTML = `
                 <div class="item-img-wrapper">
                     <img src="${item.image}" alt="${item.nameKo}" loading="lazy">
@@ -95,16 +170,10 @@ function renderList() {
     });
 }
 
-// 필터링된 데이터만 반환하는 함수 (화면 렌더링 & 현재 페이지 저장용)
 function getFilteredData() {
     return productData.filter(item => {
         if (filters.country !== 'all' && item.country !== filters.country) return false;
         if (filters.character !== 'all' && item.character !== filters.character) return false;
-        if (filters.companyGroup === 'old') {
-            if (filters.companySpecific) { if (item.company !== filters.companySpecific) return false; } else { if (!companyInfo.groups.old.includes(item.company)) return false; }
-        } else if (filters.companyGroup === 'new') {
-            if (filters.companySpecific) { if (item.company !== filters.companySpecific) return false; } else { if (!companyInfo.groups.new.includes(item.company)) return false; }
-        }
         return true;
     });
 }
@@ -128,44 +197,10 @@ function setFilter(type, value) {
     renderList();
 }
 
-function setCompanyFilter(group) {
-    filters.companyGroup = group;
-    filters.companySpecific = null;
-    const companyWrapper = document.querySelector('[data-type="company"]').closest('.filter-item-wrapper');
-    companyWrapper.querySelectorAll('.text-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.val === group);
-    });
-    document.getElementById('old-subs').classList.toggle('show', group === 'old');
-    document.getElementById('new-subs').classList.toggle('show', group === 'new');
-    document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
-    renderList();
-}
-
-function setCompanySpecific(companyName, btnElement) {
-    if (filters.companySpecific === companyName) {
-        filters.companySpecific = null;
-        btnElement.classList.remove('active');
-    } else {
-        filters.companySpecific = companyName;
-        btnElement.parentElement.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
-        btnElement.classList.add('active');
-    }
-    renderList();
-}
-
-function renderCompanySubFilters() {
-    const oldContainer = document.getElementById('old-subs');
-    companyInfo.groups.old.forEach(comp => { const btn = document.createElement('button'); btn.className = 'sub-btn'; btn.innerText = companyInfo.names[comp] || comp; btn.onclick = () => setCompanySpecific(comp, btn); oldContainer.appendChild(btn); });
-    const newContainer = document.getElementById('new-subs');
-    companyInfo.groups.new.forEach(comp => { const btn = document.createElement('button'); btn.className = 'sub-btn'; btn.innerText = companyInfo.names[comp] || comp; btn.onclick = () => setCompanySpecific(comp, btn); newContainer.appendChild(btn); });
-}
-
 function resetFilters() {
-    filters = { country: 'all', character: 'all', companyGroup: 'all', companySpecific: null };
-    document.querySelectorAll('.flag-btn, .char-btn, .text-btn, .sub-btn').forEach(btn => btn.classList.remove('active'));
+    filters = { country: 'all', character: 'all' }; 
+    document.querySelectorAll('.flag-btn, .char-btn, .text-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('button[onclick*="all"]').forEach(btn => btn.classList.add('active'));
-    document.getElementById('old-subs').classList.remove('show');
-    document.getElementById('new-subs').classList.remove('show');
     renderList();
 }
 
@@ -190,24 +225,25 @@ function toggleNickCheck() {
     }
 }
 
-// 이미지 생성
-// mode: 'all' (전체 체크항목) or 'current' (현재 필터링된 항목 중 체크된 것)
-// ----------------------------------------------------------------------
+// [이미지 생성 함수]
 async function generateImage(mode = 'all') {
     let sourceData = [];
 
     if (mode === 'all') {
-        // [이미지 저장] 버튼: 전체 데이터에서 체크된 것 찾기
         sourceData = productData;
     } else {
-        // [현재 페이지 저장] 버튼: 현재 필터링된 데이터 중에서 찾기
         sourceData = getFilteredData();
     }
 
-    // 소스 데이터 중에서 '체크된' 아이템만 필터링 (순서는 소스 데이터 순서 유지)
-    const items = sourceData.filter(p => checkedItems[currentTab].has(p.id));
+    const items = sourceData.filter(p => {
+        const isChecked = checkedItems[currentTab].has(p.id);
+        if (currentTab === 'wish' && checkedItems.owned.has(p.id)) {
+            return false; 
+        }
+        return isChecked;
+    });
 
-    if (items.length === 0) return alert("선택된 인형이 없습니다.");
+    if (items.length === 0) return alert("저장할 위시 아이템이 없습니다.\n(보유한 인형은 제외됩니다)");
     
     await document.fonts.ready;
 
@@ -219,7 +255,6 @@ async function generateImage(mode = 'all') {
     const customTitle = document.getElementById('customTitle').value;
     const nickText = document.getElementById('nickInput').value;
 
-    // 버튼 텍스트 잠시 변경 (어떤 버튼을 눌렀는지 확인)
     const btnId = mode === 'all' ? 'genBtnAll' : 'genBtnCurrent';
     const btn = document.getElementById(btnId);
     const originalText = btn.innerText;
@@ -293,6 +328,7 @@ async function generateImage(mode = 'all') {
         const x = padding + c * (cardW + gap);
         const y = headerH + r * (cardH + gap); 
 
+        // 카드 배경 (흰색)
         ctx.fillStyle = "white";
         ctx.shadowColor = "rgba(0,0,0,0.1)";
         ctx.shadowBlur = 15;
@@ -300,8 +336,9 @@ async function generateImage(mode = 'all') {
         roundRect(ctx, x, y, cardW, cardH, 20);
         ctx.fill();
         
+        // 카드 테두리: 항상 회색(#eae8e4)
         ctx.shadowColor = "transparent";
-        ctx.strokeStyle = "#eae8e4";
+        ctx.strokeStyle = "#eae8e4"; 
         ctx.lineWidth = 2;
         roundRect(ctx, x, y, cardW, cardH, 20);
         ctx.stroke();
@@ -334,7 +371,8 @@ async function generateImage(mode = 'all') {
         }
 
         if (showPrice) {
-            ctx.fillStyle = "#a4b0be";
+            // 가격표 색상 #b2bec3 고정
+            ctx.fillStyle = "#b2bec3";
             ctx.font = "bold 18px 'Gowun Dodum', sans-serif";
             const priceY = showName ? y + 390 : y + 330; 
             ctx.fillText(item.price, x + cardW/2, priceY);
@@ -349,12 +387,6 @@ async function generateImage(mode = 'all') {
     btn.disabled = false;
 }
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-});
-
-init();
-
 // 모바일 사이드바 토글 함수
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar');
@@ -363,3 +395,9 @@ function toggleSidebar() {
     sidebar.classList.toggle('active');
     overlay.classList.toggle('active');
 }
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+init();
