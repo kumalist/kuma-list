@@ -358,7 +358,7 @@ body.theme-wish .item-price {
     .main-content { 
         width: 100%; 
         overflow-y: auto; 
-        padding-top: 20px; 
+        padding-top: 5px; 
     }
     
     .list-container { padding-top: 0; }
