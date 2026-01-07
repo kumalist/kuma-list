@@ -1,4 +1,4 @@
-// script.js (수정본)
+// script.js (최종 수정본)
 
 // [설정] 구글 스프레드시트 ID
 const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM';
@@ -153,11 +153,12 @@ function renderList() {
         let totalCount = groupItems.length;
         let checkedCount = 0;
 
-        // [수정 요청 반영] 위시 탭에서도 '보유 수량'만 카운트하도록 변경
+        // [수정] 무조건 '보유(owned)' 리스트에 있는 것만 카운트
+        // 위시리스트 탭이어도 보유한 수량만 표시됨
         groupItems.forEach(item => {
-            const isOwned = checkedItems.owned.has(item.id);
-            if (isOwned) checkedCount++; 
-            // 위시 리스트 체크 여부는 카운트에 포함하지 않음 (보유 수량만 표시)
+            if (checkedItems.owned.has(item.id)) {
+                checkedCount++;
+            }
         });
 
         const grid = document.createElement('div');
@@ -243,7 +244,7 @@ function toggleCheck(id, cardElement) {
     }
     saveData();
     
-    // 상태 변경 시 리스트 다시 그리기 (PC 반응성 개선)
+    // 상태 변경 시 리스트 다시 그리기
     renderList();
 }
 

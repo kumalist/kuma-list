@@ -191,8 +191,12 @@ body.theme-wish .sub-btn.active { color: white; }
 }
 
 .main-content { flex: 1; padding: 0; overflow-y: auto; background-color: var(--bg-color); position: relative; }
-.list-container { width: 90%; max-width: 1200px; margin: 0 auto; padding: 40px 0 100px 0; }
-.group-title { font-family: 'Paperlogy', sans-serif; font-size: 22px; color: var(--theme-color); margin: 40px 0 15px 0; padding-left: 10px; border-left: 5px solid var(--theme-color); }
+
+/* [PC] 리스트 컨테이너: 상단 패딩 축소 */
+.list-container { width: 90%; max-width: 1200px; margin: 0 auto; padding: 0 0 100px 0; }
+
+/* [PC] 그룹 타이틀 여백 조정 */
+.group-title { font-family: 'Paperlogy', sans-serif; font-size: 22px; color: var(--theme-color); margin: 30px 0 15px 0; padding-left: 10px; border-left: 5px solid var(--theme-color); }
 
 .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
 
@@ -255,8 +259,9 @@ body.theme-wish .item-price {
     
     .app-container {
         flex-direction: column;
-        height: calc(100vh - 60px); 
+        /* [모바일] 헤더 높이만큼 마진 + 추가 여백 확보 */
         margin-top: 60px;
+        height: auto; /* 높이 제한 해제 */
     }
 
     .mobile-header {
@@ -269,7 +274,7 @@ body.theme-wish .item-price {
         border-bottom: 1px solid var(--border-color);
         position: fixed;
         top: 0; left: 0; right: 0;
-        z-index: 100;
+        z-index: 9999; /* Z-index 최상위 */
     }
 
     .header-left { display: flex; align-items: center; gap: 8px; }
@@ -349,10 +354,14 @@ body.theme-wish .item-price {
     
     .close-sidebar-btn { display: none; }
 
-    .main-content { width: 100%; overflow-y: auto; }
+    /* [모바일] 메인 콘텐츠 상단 여백 추가 확보 */
+    .main-content { 
+        width: 100%; 
+        overflow-y: auto; 
+        padding-top: 20px; 
+    }
     
-    /* [수정] 모바일에서 리스트 컨테이너 여백 더 확보 */
-    .list-container { padding-top: 10px; }
+    .list-container { padding-top: 0; }
     
     .group-title { margin-top: 20px; font-size: 18px; }
     
@@ -386,9 +395,10 @@ body.theme-wish .item-price {
     }
     .overlay.active { display: block; }
     
-    /* [수정] 모바일에서 체크박스 버튼이 헤더에 가리지 않게 상단 여백 추가 */
+    /* [모바일] 상단 컨트롤 여백 넉넉히 */
     .top-controls {
-        padding-top: 20px;
+        padding-top: 25px; 
+        justify-content: flex-end; /* 모바일은 오른쪽 유지 */
     }
 }
 
@@ -419,13 +429,14 @@ body.theme-wish .item-price {
     color: #b2bec3 !important;
 }
 
-/* 상단 컨트롤 (체크한 것만 보기) */
+/* [PC 수정] 상단 컨트롤: 왼쪽 정렬 + 하단 간격 줄임 */
 .top-controls {
     display: flex;
-    justify-content: flex-end; /* 오른쪽 정렬 */
-    padding: 15px 5% 0 5%; /* 리스트 컨테이너와 너비 맞춤 */
+    justify-content: flex-start; /* 왼쪽 정렬 */
+    padding: 20px 5% 0 5%;
     max-width: 1200px;
     margin: 0 auto;
+    margin-bottom: -10px; /* 리스트와 간격 좁히기 */
 }
 
 .view-check-label {
@@ -496,9 +507,5 @@ body.theme-wish .item-price {
         width: 45px;
         height: 45px;
         font-size: 16px;
-    }
-    
-    .top-controls {
-        padding: 15px 15px 0 15px; /* 모바일 패딩 */
     }
 }
