@@ -1,4 +1,4 @@
-// script.js (위시리스트 회색 체크 강제 적용 수정본)
+// script.js (이미지 저장 여백 자동 조절 + 5열 배치 + 색상 수정)
 
 // [설정] 구글 스프레드시트 ID
 const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM';
@@ -7,7 +7,8 @@ const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM';
 let productData = [];
 
 let currentTab = 'owned'; 
-let filters = { country: 'all', character: 'all' }; 
+// group 필터 포함
+let filters = { country: 'all', character: 'all', group: 'all' }; 
 let isViewCheckedOnly = false; 
 
 let checkedItems = {
@@ -19,24 +20,20 @@ const listContainer = document.getElementById('listContainer');
 const mainContent = document.getElementById('mainContent'); 
 const scrollTopBtn = document.getElementById('scrollTopBtn'); 
 
-// [중요] 강제 스타일 주입 함수 업데이트
-// 위시리스트 내 보유 아이템(회색)은 무조건 '✔' 표시가 뜨도록 함
+// [중요] 강제 스타일 주입 함수
 function injectGrayStyle() {
     const style = document.createElement('style');
     style.innerHTML = `
-        /* 위시리스트 내 보유 아이템(회색 잠금) 스타일 강제 적용 */
         .item-card.owned-in-wish {
             border-color: #b2bec3 !important;
             background-color: #f1f2f6 !important;
             cursor: default !important;
         }
-        /* 체크마크 원 색상: 회색으로 강제 변경 + 하트가 아닌 체크표시 강제 */
         .item-card.owned-in-wish .check-overlay::after {
             background-color: #b2bec3 !important;
             box-shadow: none !important;
-            content: '✔' !important; /* 하트가 되지 않게 강제 */
+            content: '✔' !important;
         }
-        /* 가격표 색상 변경 */
         .item-card.owned-in-wish .item-price {
             background-color: #e2e6ea !important;
             color: #b2bec3 !important;
@@ -47,15 +44,13 @@ function injectGrayStyle() {
 
 // 초기화 함수
 async function init() {
-    injectGrayStyle(); // [중요] 강제 스타일 주입 실행
+    injectGrayStyle(); 
     await fetchData(); 
     renderList();
     updateTabUI();
     
-    // 스크롤 이벤트
     mainContent.addEventListener('scroll', scrollFunction);
 
-    // 이벤트 리스너 등록
     const viewCheckInput = document.getElementById('viewCheckedOnly');
     if (viewCheckInput) {
         viewCheckInput.addEventListener('change', toggleViewChecked);
@@ -117,23 +112,25 @@ function parseCSV(csvText) {
 function switchTab(tab) {
     currentTab = tab;
     
-    // 테마 적용
     if (tab === 'wish') { 
         document.body.classList.add('theme-wish'); 
     } else { 
         document.body.classList.remove('theme-wish'); 
     }
     
-    // 모아보기 버튼 텍스트 변경
     const viewCheckText = document.getElementById('viewCheckText');
     if (viewCheckText) {
         viewCheckText.innerText = tab === 'owned' ? "내 콜렉션 모아보기" : "내 위시 모아보기";
     }
 
-    // 탑 버튼 이미지 변경
     const topImg = document.getElementById('scrollTopImg');
     if (topImg) {
         topImg.src = tab === 'owned' ? 'img/top_own.png' : 'img/top_wish.png';
+    }
+
+    const delImg = document.getElementById('deleteRecordImg');
+    if (delImg) {
+        delImg.src = tab === 'owned' ? 'img/own_delete.png' : 'img/wish_delete.png';
     }
     
     updateTabUI();
@@ -154,14 +151,13 @@ function updateTabUI() {
     document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.toggle('active', btn.dataset.tab === currentTab); });
 }
 
-// 체크한 것만 모아보기 토글 함수
 function toggleViewChecked() {
     const checkbox = document.getElementById('viewCheckedOnly');
     isViewCheckedOnly = checkbox.checked;
     renderList();
 }
 
-// [핵심] 리스트 렌더링 함수
+// 리스트 렌더링 함수
 function renderList() {
     listContainer.innerHTML = '';
     
@@ -193,7 +189,6 @@ function renderList() {
         let totalCount = groupItems.length;
         let checkedCount = 0;
 
-        // [카운트] 무조건 '보유(owned)' 리스트에 있는 것만 계산
         groupItems.forEach(item => {
             if (checkedItems.owned.has(item.id)) {
                 checkedCount++;
@@ -211,13 +206,10 @@ function renderList() {
             let displayClass = ''; 
             let isLocked = false;  
 
-            // 1. [상태 결정 로직]
             if (currentTab === 'owned') {
                 if (isOwned) displayClass = 'checked';
             } else {
-                // [위시 탭]
                 if (isOwned) {
-                    // ★핵심★ 체크 표시도 나와야 하고, 회색 스타일도 먹어야 함
                     displayClass = 'checked owned-in-wish'; 
                     isLocked = true;
                 } else if (isWished) {
@@ -225,19 +217,16 @@ function renderList() {
                 }
             }
 
-            // 2. [모아보기 필터링 로직]
             let showItem = true;
             if (isViewCheckedOnly) {
                 if (currentTab === 'owned') {
                     if (!isOwned) showItem = false;
                 } else {
-                    // 위시 모아보기: 보유한 아이템(isOwned)은 숨김
                     if (isOwned) showItem = false; 
                     if (!isWished) showItem = false;
                 }
 
                 if (showItem) {
-                    // 모아보기 통과 시: 원본 감상을 위해 효과 제거
                     displayClass = ''; 
                     isLocked = false;
                 }
@@ -250,16 +239,13 @@ function renderList() {
             const card = document.createElement('div');
             card.className = `item-card ${displayClass}`;
             
-            // ★[안전장치]★ CSS 우선순위 문제 원천 차단: JS로 강제 회색 스타일 주입
             if (isLocked && !isViewCheckedOnly) {
                 card.style.borderColor = "#b2bec3";
                 card.style.backgroundColor = "#f1f2f6";
             }
 
-            // 3. 클릭 이벤트
             if (!isViewCheckedOnly) {
                 card.onclick = () => {
-                    // 위시탭에서 보유중인 아이템(잠금)은 클릭 불가
                     if (isLocked) return; 
                     toggleCheck(item.id, card);
                 };
@@ -300,6 +286,7 @@ function getFilteredData() {
     return productData.filter(item => {
         if (filters.country !== 'all' && item.country !== filters.country) return false;
         if (filters.character !== 'all' && item.character !== filters.character) return false;
+        if (filters.group !== 'all' && item.group !== filters.group) return false;
         return true;
     });
 }
@@ -329,7 +316,7 @@ function setFilter(type, value) {
 }
 
 function resetFilters() {
-    filters = { country: 'all', character: 'all' }; 
+    filters = { country: 'all', character: 'all', group: 'all' }; 
     document.querySelectorAll('.flag-btn, .char-btn, .text-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('button[onclick*="all"]').forEach(btn => btn.classList.add('active'));
     
@@ -369,7 +356,7 @@ function scrollToTop() {
     mainContent.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// [이미지 생성 함수]
+// [이미지 생성 함수] - 높이 자동 조절 및 색상/열 수정 적용
 async function generateImage(mode = 'all') {
     let sourceData = [];
 
@@ -386,7 +373,6 @@ async function generateImage(mode = 'all') {
         if (currentTab === 'owned') {
             return isOwned;
         } else {
-            // 위시 탭 이미지: 보유한 건 제외, 순수 위시만
             if (isOwned) return false;
             return isWished;
         }
@@ -413,10 +399,18 @@ async function generateImage(mode = 'all') {
     const cvs = document.createElement('canvas');
     const ctx = cvs.getContext('2d');
     
-    const maxCols = 4;
+    // [수정] 5열로 변경
+    const maxCols = 5; 
     const cols = items.length < maxCols ? items.length : maxCols;
     
-    const cardW = 300, cardH = 420;
+    // [수정] 카드 높이 자동 계산 (기본 이미지 영역 300 + 옵션별 추가 높이)
+    let dynamicCardH = 300; 
+    if (showName) dynamicCardH += 80;
+    if (showPrice) dynamicCardH += 40;
+    
+    const cardW = 300;
+    const cardH = dynamicCardH; // 계산된 높이 적용
+    
     const gap = 30, padding = 60;
     
     const headerH = 160; 
@@ -428,7 +422,8 @@ async function generateImage(mode = 'all') {
     cvs.width = padding * 2 + (cardW * cols) + (gap * (cols - 1));
     cvs.height = headerH + padding + (cardH * rows) + (gap * (rows - 1));
 
-    ctx.fillStyle = "#fdfbf7";
+    // [수정] 배경색 변경 (#FAFAFA)
+    ctx.fillStyle = "#FAFAFA";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
 
     if (showTitle) {
@@ -485,9 +480,9 @@ async function generateImage(mode = 'all') {
         roundRect(ctx, x, y, cardW, cardH, 20);
         ctx.fill();
         
-        // 카드 테두리
+        // [수정] 카드 테두리 색상 변경 (회색 계열)
         ctx.shadowColor = "transparent";
-        ctx.strokeStyle = "#eae8e4"; 
+        ctx.strokeStyle = "#dfe6e9"; 
         ctx.lineWidth = 2;
         roundRect(ctx, x, y, cardW, cardH, 20);
         ctx.stroke();
@@ -500,6 +495,7 @@ async function generateImage(mode = 'all') {
             ctx.drawImage(img, x + (cardW - dw)/2, y + 20 + (260 - dh)/2, dw, dh);
         }
 
+        // 이름 표시 로직 (체크시에만 실행)
         if (showName) {
             ctx.textAlign = "center";
             ctx.textBaseline = "alphabetic"; 
@@ -519,9 +515,11 @@ async function generateImage(mode = 'all') {
             ctx.fillText(line, x + cardW/2, lineY);
         }
 
+        // 가격 표시 로직 (체크시에만 실행 + 위치 자동 조절)
         if (showPrice) {
             ctx.fillStyle = "#b2bec3";
             ctx.font = "bold 18px 'Gowun Dodum', sans-serif";
+            // 이름이 없으면 가격을 좀 더 위로 당겨서 표시
             const priceY = showName ? y + 390 : y + 330; 
             ctx.fillText(item.price, x + cardW/2, priceY);
         }
