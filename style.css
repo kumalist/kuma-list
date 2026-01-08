@@ -585,11 +585,12 @@ body:not(.theme-wish) .view-check-label:hover { background: #f1f2f6; }
     
     .group-title { margin-top: 20px; font-size: 18px; }
     
-    /* 모바일 3단 그리드 유지 (3fr) + 간격 축소 */
-    .items-grid { 
+/* 모바일 3단 그리드 유지 (3fr) + 간격 축소 */
+    .items-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr); /* 3단 유지 */
-        gap: 5px; /* 간격 축소 */
+        /* [수정] gap: 세로(15px) 가로(5px) 따로 설정 */
+        gap: 10px 5px;
     }
 
 
