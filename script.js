@@ -329,26 +329,18 @@ function resetRecords() {
     }
 }
 
-// [추가] 간소화 모드 UI 토글 함수
+// [수정] 간소화 모드 UI 토글 (타이틀은 제외하고 상품명/가격만 비활성화)
 function toggleSimpleModeUI() {
     const isSimple = document.getElementById('simpleMode').checked;
-    const titleRow = document.getElementById('titleOptionRow');
     const textOptions = document.getElementById('textOptions');
 
     if (isSimple) {
-        titleRow.classList.add('disabled-option');
         textOptions.classList.add('disabled-option');
-        
-        document.getElementById('showTitle').disabled = true;
-        document.getElementById('customTitle').disabled = true;
         document.getElementById('showName').disabled = true;
         document.getElementById('showPrice').disabled = true;
+        // 타이틀 관련은 건드리지 않음
     } else {
-        titleRow.classList.remove('disabled-option');
         textOptions.classList.remove('disabled-option');
-
-        document.getElementById('showTitle').disabled = false;
-        document.getElementById('customTitle').disabled = false;
         document.getElementById('showName').disabled = false;
         document.getElementById('showPrice').disabled = false;
     }
@@ -370,7 +362,7 @@ function toggleSidebar() {
     overlay.classList.toggle('active');
 }
 
-// --- [이미지 생성] 간소화 모드 & 가변 그리드 적용 ---
+// --- [이미지 생성] 간소화 모드 + 타이틀 지원 + 가변 그리드 ---
 async function generateImage(mode = 'all') {
     let sourceData = [];
 
@@ -423,33 +415,31 @@ async function generateImage(mode = 'all') {
     const cols = calculatedCols;
     
     // [설정 분기]
-    let cardW, cardH, gap, headerH, titleY;
+    let cardW, cardH, gap;
+
+    // 헤더(타이틀 영역)는 모드 상관없이 체크 여부에 따라 결정
+    const headerH = showTitle ? 140 : 60;
+    const titleY = 70;
 
     if (isSimpleMode) {
-        // [간소화 모드] 설정
+        // [간소화 모드]
         cardW = 160; 
         cardH = 160; 
         gap = 15;    
-        headerH = 60; // 타이틀 무조건 없음 (여백만 60)
-        titleY = 0;
     } else {
-        // [일반 모드] 설정
+        // [일반 모드]
         cardW = 300;
         let dynamicCardH = 300; 
         if (showName) dynamicCardH += 80;
         if (showPrice) dynamicCardH += 40;
         cardH = dynamicCardH;
-        
         gap = 30;
-        // 타이틀이 켜져있으면 140, 꺼져있으면 60(여백)
-        headerH = showTitle ? 140 : 60;
-        titleY = 70;
     }
 
     const padding = 60;
     const rows = Math.ceil(items.length / cols);
 
-    // 캔버스 크기
+    // 캔버스 크기 계산
     cvs.width = padding * 2 + (cardW * cols) + (gap * (cols - 1));
     cvs.height = headerH + (cardH * rows) + (gap * (rows - 1)) + padding;
 
@@ -457,8 +447,8 @@ async function generateImage(mode = 'all') {
     ctx.fillStyle = "#FAFAFA";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-    // 타이틀 (일반 모드 + 체크 시에만 그림)
-    if (!isSimpleMode && showTitle) {
+    // 타이틀 (체크되어 있으면 무조건 그림)
+    if (showTitle) {
         const titleColor = "#aeb4d1"; 
         ctx.fillStyle = titleColor;
         ctx.font = "bold 45px 'Paperlogy', sans-serif";
@@ -475,7 +465,7 @@ async function generateImage(mode = 'all') {
         img.onerror = () => resolve(null);
     });
 
-    // 둥근 사각형 함수 (일반 모드용)
+    // 둥근 사각형 함수
     function roundRect(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
@@ -501,12 +491,12 @@ async function generateImage(mode = 'all') {
         const img = await loadImage(item.image);
 
         if (isSimpleMode) {
-            // [간소화 모드: 원형 그리기]
+            // [간소화 모드: 원형]
             const radius = cardW / 2;
             const cx = x + radius;
             const cy = y + radius;
 
-            // 1. 원형 배경 (흰색 + 그림자)
+            // 1. 배경
             ctx.save();
             ctx.beginPath();
             ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -517,7 +507,7 @@ async function generateImage(mode = 'all') {
             ctx.fill();
             ctx.restore();
 
-            // 2. 이미지 (원형 클리핑)
+            // 2. 이미지
             ctx.save();
             ctx.beginPath();
             ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -527,7 +517,6 @@ async function generateImage(mode = 'all') {
                 const aspect = img.width / img.height;
                 let dw = cardW, dh = cardH;
                 if (aspect > 1) dw = cardH * aspect; else dh = cardW / aspect;
-                // 중앙 정렬
                 ctx.drawImage(img, x + (cardW - dw) / 2, y + (cardH - dh) / 2, dw, dh);
             }
             ctx.restore();
@@ -542,7 +531,7 @@ async function generateImage(mode = 'all') {
             ctx.restore();
 
         } else {
-            // [일반 모드: 카드 그리기]
+            // [일반 모드: 카드]
             ctx.fillStyle = "white";
             ctx.shadowColor = "rgba(0,0,0,0.1)";
             ctx.shadowBlur = 15;
