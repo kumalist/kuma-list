@@ -119,15 +119,22 @@ body.theme-wish .sub-btn { color: #fdd2d6; }
     pointer-events: none;
 }
 .flag-btn:hover .overlay { opacity: 1; }
-.flag-btn.active { border-color: var(--theme-color); border-width: 2px; transform: scale(1.1); }
 
+/* [수정] 클릭 시 확대 제거 (transform 삭제) */
+.flag-btn.active { 
+    border-color: var(--theme-color); 
+    border-width: 2px; 
+    /* transform: scale(1.1); 삭제됨 - 덜커덩 방지 */
+}
+
+/* 국가 필터의 ALL 버튼만 콕 집어서 국기 사이즈로 맞춤 */
 button[onclick*="'country', 'all'"] {
-    width: 34px;
-    height: 24px;
-    padding: 0; /* 패딩 제거 */
-    font-size: 10px; /* 글씨 크기 축소 */
+    width: 34px; /* ALL 글자가 들어가야 해서 아주 조금 더 큼 */
+    height: 24px; /* 국기 버튼은 테두리 포함 24px 정도라 맞춤 */
+    padding: 0; 
+    font-size: 10px; 
     border-radius: 4px;
-    display: flex; align-items: center; justify-content: center; /* 텍스트 정중앙 */
+    display: flex; align-items: center; justify-content: center; 
 }
 
 .char-btn {
@@ -143,7 +150,13 @@ button[onclick*="'country', 'all'"] {
     text-align: center; word-break: keep-all; padding: 2px; pointer-events: none;
 }
 .char-btn:hover .overlay { opacity: 1; }
-.char-btn.active { border-color: var(--theme-color); border-width: 3px; transform: scale(1.05); }
+
+/* [수정] 클릭 시 확대 제거 및 테두리 두께 유지 */
+.char-btn.active { 
+    border-color: var(--theme-color); 
+    border-width: 2px; /* 3px -> 2px로 변경하여 레이아웃 밀림 방지 */
+    /* transform: scale(1.05); 삭제됨 - 덜커덩 방지 */
+}
 
 .text-btn { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: white; cursor: pointer; font-size: 13px; color: #636e72; transition: 0.2s; }
 .text-btn.active { background: var(--theme-color); color: white; border-color: var(--theme-color); font-weight: bold; }
@@ -503,6 +516,14 @@ body:not(.theme-wish) .view-check-label:hover { background: #f1f2f6; }
 
     .mobile-menu-btn { background: transparent; border: none; padding: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .menu-icon { font-size: 24px; color: var(--theme-color); line-height: 1; transition: 0.2s; }
+
+    /* 회사 하위 필터가 모바일에서 잘 보이도록 강제 flex + 줄바꿈 적용 */
+    .sub-filter-container { width: 100%; justify-content: center; }
+    .sub-filter-container.show { 
+        display: flex !important; 
+        flex-wrap: wrap; 
+        gap: 6px;
+    }
 
     .sidebar {
         position: fixed;
