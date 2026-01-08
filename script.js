@@ -362,7 +362,15 @@ function scrollToTop() {
     mainContent.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// --- 이미지 생성 (간소화 모드 + 가변 그리드) ---
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.overlay');
+    
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+}
+
+// --- [이미지 생성] 간소화 모드 & 가변 그리드 적용 ---
 async function generateImage(mode = 'all') {
     let sourceData = [];
 
@@ -418,20 +426,22 @@ async function generateImage(mode = 'all') {
     let cardW, cardH, gap, headerH, titleY;
 
     if (isSimpleMode) {
-        // 간소화 모드
+        // [간소화 모드] 설정
         cardW = 160; 
         cardH = 160; 
         gap = 15;    
-        headerH = 60; 
+        headerH = 60; // 타이틀 무조건 없음 (여백만 60)
         titleY = 0;
     } else {
-        // 일반 모드
+        // [일반 모드] 설정
         cardW = 300;
         let dynamicCardH = 300; 
         if (showName) dynamicCardH += 80;
         if (showPrice) dynamicCardH += 40;
         cardH = dynamicCardH;
+        
         gap = 30;
+        // 타이틀이 켜져있으면 140, 꺼져있으면 60(여백)
         headerH = showTitle ? 140 : 60;
         titleY = 70;
     }
@@ -447,7 +457,7 @@ async function generateImage(mode = 'all') {
     ctx.fillStyle = "#FAFAFA";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-    // 타이틀 (일반 모드 + 체크 시)
+    // 타이틀 (일반 모드 + 체크 시에만 그림)
     if (!isSimpleMode && showTitle) {
         const titleColor = "#aeb4d1"; 
         ctx.fillStyle = titleColor;
@@ -465,7 +475,7 @@ async function generateImage(mode = 'all') {
         img.onerror = () => resolve(null);
     });
 
-    // 둥근 사각형 함수
+    // 둥근 사각형 함수 (일반 모드용)
     function roundRect(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
@@ -491,12 +501,12 @@ async function generateImage(mode = 'all') {
         const img = await loadImage(item.image);
 
         if (isSimpleMode) {
-            // [간소화 모드: 원형]
+            // [간소화 모드: 원형 그리기]
             const radius = cardW / 2;
             const cx = x + radius;
             const cy = y + radius;
 
-            // 1. 배경
+            // 1. 원형 배경 (흰색 + 그림자)
             ctx.save();
             ctx.beginPath();
             ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -507,7 +517,7 @@ async function generateImage(mode = 'all') {
             ctx.fill();
             ctx.restore();
 
-            // 2. 이미지
+            // 2. 이미지 (원형 클리핑)
             ctx.save();
             ctx.beginPath();
             ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -517,6 +527,7 @@ async function generateImage(mode = 'all') {
                 const aspect = img.width / img.height;
                 let dw = cardW, dh = cardH;
                 if (aspect > 1) dw = cardH * aspect; else dh = cardW / aspect;
+                // 중앙 정렬
                 ctx.drawImage(img, x + (cardW - dw) / 2, y + (cardH - dh) / 2, dw, dh);
             }
             ctx.restore();
@@ -531,7 +542,7 @@ async function generateImage(mode = 'all') {
             ctx.restore();
 
         } else {
-            // [일반 모드: 카드]
+            // [일반 모드: 카드 그리기]
             ctx.fillStyle = "white";
             ctx.shadowColor = "rgba(0,0,0,0.1)";
             ctx.shadowBlur = 15;
@@ -579,7 +590,7 @@ async function generateImage(mode = 'all') {
                 ctx.fillText(item.price, x + cardW/2, priceY);
             }
         }
-    } // for loop end
+    } // for loop
 
     const link = document.createElement('a');
     link.download = `nongdam_${currentTab}_list.jpg`;
@@ -587,14 +598,6 @@ async function generateImage(mode = 'all') {
     link.click();
     btn.innerText = originalText;
     btn.disabled = false;
-}
-
-function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.overlay');
-    
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn => {

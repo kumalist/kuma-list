@@ -156,11 +156,11 @@ body.theme-wish .sub-btn.active { color: white; }
 .sidebar-divider { border: none; border-top: 1px solid var(--border-color); margin: 5px 0; }
 .save-options { display: flex; flex-direction: column; gap: 12px; }
 
-/* [추가] 비활성화된 옵션 스타일 (흐리게 처리) */
+/* [추가] 옵션 비활성화 스타일 */
 .disabled-option {
     opacity: 0.5;
-    pointer-events: none; /* 클릭 방지 */
-    transition: opacity 0.3s;
+    pointer-events: none;
+    transition: 0.3s;
 }
 
 .custom-input {
