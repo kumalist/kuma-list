@@ -1,13 +1,11 @@
-// script.js (이미지 저장 여백 자동 조절 + 5열 배치 + 색상 수정)
+// script.js 
 
-// [설정] 구글 스프레드시트 ID
 const SHEET_ID = '1hTPuwTZkRnPVoo5GUUC1fhuxbscwJrLdWVG-eHPWaIM';
 
-// 데이터가 로드될 변수
 let productData = [];
 
 let currentTab = 'owned'; 
-// group 필터 포함
+
 let filters = { country: 'all', character: 'all', group: 'all' }; 
 let isViewCheckedOnly = false; 
 
@@ -20,7 +18,7 @@ const listContainer = document.getElementById('listContainer');
 const mainContent = document.getElementById('mainContent'); 
 const scrollTopBtn = document.getElementById('scrollTopBtn'); 
 
-// [중요] 강제 스타일 주입 함수
+// 스타일 지정
 function injectGrayStyle() {
     const style = document.createElement('style');
     style.innerHTML = `
@@ -42,7 +40,7 @@ function injectGrayStyle() {
     document.head.appendChild(style);
 }
 
-// 초기화 함수
+// 초기화
 async function init() {
     injectGrayStyle(); 
     await fetchData(); 
@@ -57,7 +55,7 @@ async function init() {
     }
 }
 
-// 구글 시트 CSV 데이터 가져오기
+// 데이터 불러오기
 async function fetchData() {
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
     
@@ -72,13 +70,12 @@ async function fetchData() {
     } catch (error) {
         console.error("데이터 로드 실패:", error);
         listContainer.innerHTML = `<div style="text-align:center; padding:50px; color:#aaa; line-height:1.6;">
-            데이터를 불러오지 못했습니다.<br>
-            <span style="font-size:12px;">(컴퓨터 파일로 열었다면 Github에 올려서 확인해주세요!)</span>
+            데이터를 불러오지 못했습니다.</span>
         </div>`;
     }
 }
 
-// CSV 파싱 함수
+// CSV 파싱
 function parseCSV(csvText) {
     const rows = csvText.split('\n').map(row => {
         const regex = /(?:^|,)(\"(?:[^\"]+|\"\")*\"|[^,]*)/g;
@@ -136,11 +133,6 @@ function switchTab(tab) {
     updateTabUI();
     renderList();
 
-    const titleInput = document.getElementById('customTitle');
-    if(titleInput) {
-        titleInput.value = tab === 'owned' ? "농담곰 인형 보유 리스트" : "농담곰 인형 위시 리스트";
-    }
-
     const badge = document.getElementById('mobileModeBadge');
     if (badge) {
         badge.innerText = tab === 'owned' ? "보유" : "위시";
@@ -157,7 +149,7 @@ function toggleViewChecked() {
     renderList();
 }
 
-// 리스트 렌더링 함수
+// 리스트 렌더링
 function renderList() {
     listContainer.innerHTML = '';
     
@@ -356,7 +348,7 @@ function scrollToTop() {
     mainContent.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// [이미지 생성 함수] - 높이 자동 조절 및 색상/열 수정 적용
+// --- [수정] 이미지 생성 (가변 그리드 적용) ---
 async function generateImage(mode = 'all') {
     let sourceData = [];
 
@@ -378,17 +370,15 @@ async function generateImage(mode = 'all') {
         }
     });
 
-    if (items.length === 0) return alert("저장할 아이템이 없습니다.\n(보유 탭은 보유한 인형, 위시 탭은 순수 위시 인형만 저장됩니다)");
+    if (items.length === 0) return alert("현재 페이지에서 체크된 상품이 없습니다.");
     
     await document.fonts.ready;
 
     const showName = document.getElementById('showName').checked;
     const showPrice = document.getElementById('showPrice').checked;
-    const showNick = document.getElementById('showNick').checked;
     const showTitle = document.getElementById('showTitle').checked;
     
     const customTitle = document.getElementById('customTitle').value;
-    const nickText = document.getElementById('nickInput').value;
 
     const btnId = mode === 'all' ? 'genBtnAll' : 'genBtnCurrent';
     const btn = document.getElementById(btnId);
@@ -399,17 +389,26 @@ async function generateImage(mode = 'all') {
     const cvs = document.createElement('canvas');
     const ctx = cvs.getContext('2d');
     
-    // [수정] 5열로 변경
-    const maxCols = 5; 
-    const cols = items.length < maxCols ? items.length : maxCols;
+    // [핵심 로직] 제곱근(√)을 이용한 가변 컬럼 수 계산
+    const totalCount = items.length;
+    let calculatedCols = Math.round(Math.sqrt(totalCount)); // 제곱근 반올림 (예: 16 -> 4, 20 -> 4, 25 -> 5)
     
-    // [수정] 카드 높이 자동 계산 (기본 이미지 영역 300 + 옵션별 추가 높이)
+    // 최소 3칸 ~ 최대 8칸 제한 (모바일 및 PC 보기 좋게)
+    if (calculatedCols < 3) calculatedCols = 3;
+    if (calculatedCols > 8) calculatedCols = 8;
+    
+    // 만약 아이템이 매우 적은 경우(예: 2개)는 그냥 개수만큼만 설정
+    if (totalCount < 3) calculatedCols = totalCount;
+
+    const cols = calculatedCols;
+    
+    // 카드 높이 계산
     let dynamicCardH = 300; 
     if (showName) dynamicCardH += 80;
     if (showPrice) dynamicCardH += 40;
     
     const cardW = 300;
-    const cardH = dynamicCardH; // 계산된 높이 적용
+    const cardH = dynamicCardH; 
     
     const gap = 30, padding = 60;
     
@@ -419,10 +418,10 @@ async function generateImage(mode = 'all') {
 
     const rows = Math.ceil(items.length / cols);
 
+    // 캔버스 크기 설정 (cols에 따라 너비가 변함)
     cvs.width = padding * 2 + (cardW * cols) + (gap * (cols - 1));
     cvs.height = headerH + padding + (cardH * rows) + (gap * (rows - 1));
 
-    // [수정] 배경색 변경 (#FAFAFA)
     ctx.fillStyle = "#FAFAFA";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
 
@@ -432,15 +431,8 @@ async function generateImage(mode = 'all') {
         ctx.font = "bold 45px 'Paperlogy', sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle"; 
+        // 캔버스 중앙에 타이틀 배치
         ctx.fillText(customTitle, cvs.width / 2, titleY);
-    }
-
-    if (showNick && nickText.trim() !== "") {
-        ctx.font = "bold 24px 'Paperlogy', sans-serif"; 
-        ctx.fillStyle = "#636e72"; 
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(nickText, cvs.width / 2, nickY);
     }
 
     const loadImage = (src) => new Promise(resolve => {
@@ -472,7 +464,7 @@ async function generateImage(mode = 'all') {
         const x = padding + c * (cardW + gap);
         const y = headerH + r * (cardH + gap); 
 
-        // 카드 배경 (흰색)
+        // 카드 배경
         ctx.fillStyle = "white";
         ctx.shadowColor = "rgba(0,0,0,0.1)";
         ctx.shadowBlur = 15;
@@ -480,7 +472,7 @@ async function generateImage(mode = 'all') {
         roundRect(ctx, x, y, cardW, cardH, 20);
         ctx.fill();
         
-        // [수정] 카드 테두리 색상 변경 (회색 계열)
+        // 카드 테두리
         ctx.shadowColor = "transparent";
         ctx.strokeStyle = "#dfe6e9"; 
         ctx.lineWidth = 2;
@@ -495,7 +487,7 @@ async function generateImage(mode = 'all') {
             ctx.drawImage(img, x + (cardW - dw)/2, y + 20 + (260 - dh)/2, dw, dh);
         }
 
-        // 이름 표시 로직 (체크시에만 실행)
+        // 이름 표시
         if (showName) {
             ctx.textAlign = "center";
             ctx.textBaseline = "alphabetic"; 
@@ -515,11 +507,10 @@ async function generateImage(mode = 'all') {
             ctx.fillText(line, x + cardW/2, lineY);
         }
 
-        // 가격 표시 로직 (체크시에만 실행 + 위치 자동 조절)
+        // 가격 표시
         if (showPrice) {
             ctx.fillStyle = "#b2bec3";
             ctx.font = "bold 18px 'Gowun Dodum', sans-serif";
-            // 이름이 없으면 가격을 좀 더 위로 당겨서 표시
             const priceY = showName ? y + 390 : y + 330; 
             ctx.fillText(item.price, x + cardW/2, priceY);
         }
